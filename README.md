@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Beacon Scholarship Registration 2026
 
-## Getting Started
+A modern, responsive, and secure football talent registration platform built with Next.js 14+, MongoDB, and Razorpay.
 
-First, run the development server:
+## 🚀 Features
+- **Modern UI**: Dark/Green sports theme with glassmorphism, Framer Motion animations, and Tailwind CSS.
+- **Multi-step Form**: 5-step intuitive registration process with Zod validation.
+- **Payment Gateway**: Seamless Razorpay integration for registration fee processing.
+- **Admin Panel**: Dashboard for managing applicants, tracking payments, and exporting data.
+- **Fully Responsive**: Optimized for mobile, tablet, and desktop.
 
+## 🛠 Tech Stack
+- **Framework**: Next.js (App Router, TypeScript)
+- **Database**: MongoDB (Mongoose)
+- **Styling**: Tailwind CSS, Framer Motion, Lucide React
+- **Payments**: Razorpay Node SDK
+- **Validation**: React Hook Form, Zod
+
+## 📦 Getting Started
+
+### 1. Clone the repository and install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Create a `.env.local` file in the root directory and add the following:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+# MongoDB Connection
+MONGODB_URI=your_mongodb_connection_string
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Razorpay Credentials (Get from Razorpay Dashboard > Settings > API Keys)
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxx
 
-## Learn More
+# Next Auth (For Admin Login)
+NEXTAUTH_SECRET=your_secret_string
+NEXTAUTH_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Cloudinary (Optional, for document storage)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Run the development server
+```bash
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🏗 Project Structure
+- `src/app`: Page routes and Server Components.
+- `src/app/api`: Serverless API routes (Payment, Registration).
+- `src/components`: Reusable UI components.
+- `src/models`: Mongoose database schemas.
+- `src/lib`: Utility functions (DB connection, Validations).
 
-## Deploy on Vercel
+## 📄 License
+This project is licensed under the MIT License.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+© 2026 Beacon Scholarship Program. All rights reserved.
