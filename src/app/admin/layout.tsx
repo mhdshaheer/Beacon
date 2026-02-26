@@ -28,6 +28,16 @@ export default function AdminLayout({
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '/admin/settings' },
   ];
 
+  const isLoginPage = pathname === '/admin/login';
+
+  if (isLoginPage) {
+    return (
+      <div className="min-h-screen bg-[#050505] text-white">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#050505] text-white">
       {/* Sidebar */}
