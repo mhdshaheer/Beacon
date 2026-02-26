@@ -13,24 +13,23 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || '',
 });
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await connectDB();
     const data = await req.json();
-
-    // 1. Handle User
-    let user = await User.findOne({ email: data.email });
-    if (!user) {
-      user = await User.create({
-        name: data.fullName,
-        email: data.email,
-        role: 'user',
-      });
-    }
+    const userId = (session.user as any).id;
 
     // 2. Create Application
     const application = await Application.create({
-      userId: user._id,
+      userId,
       personalInfo: {
         fullName: data.fullName,
         dob: new Date(data.dob),

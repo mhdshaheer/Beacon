@@ -31,13 +31,20 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
   const containerRef = useRef<HTMLDivElement>(null);
   const yearGridRef = useRef<HTMLDivElement>(null);
 
-  // Helper to parse YYYY-MM-DD to local Date object
-  const parseDate = (dateStr: string | undefined): Date | null => {
-    if (!dateStr || typeof dateStr !== 'string') return null;
-    const [y, m, d] = dateStr.split('-').map(Number);
-    if (!y || !m || !d) return null;
-    const date = new Date(y, m - 1, d);
-    return isNaN(date.getTime()) ? null : date;
+  // Helper to parse date strings (YYYY-MM-DD or ISO) to local Date object
+  const parseDate = (dateStr: any): Date | null => {
+    if (!dateStr) return null;
+    
+    // Handle Date objects
+    if (dateStr instanceof Date) return dateStr;
+    
+    // Handle string inputs
+    if (typeof dateStr === 'string') {
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+    }
+    
+    return null;
   };
 
   // Helper to format Date to YYYY-MM-DD
