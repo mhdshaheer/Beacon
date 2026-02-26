@@ -8,8 +8,10 @@ import {
   CreditCard, 
   Settings, 
   LogOut,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 export default function AdminLayout({
   children,
@@ -20,7 +22,8 @@ export default function AdminLayout({
 
   const menuItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', href: '/admin' },
-    { icon: <Users className="w-5 h-5" />, label: 'Applicants', href: '/admin/applicants' },
+    { icon: <Users className="w-5 h-5" />, label: 'Users', href: '/admin/users' },
+    { icon: <FileText className="w-5 h-5" />, label: 'Applications', href: '/admin/applicants' },
     { icon: <CreditCard className="w-5 h-5" />, label: 'Payments', href: '/admin/payments' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '/admin/settings' },
   ];
@@ -57,7 +60,10 @@ export default function AdminLayout({
         </nav>
 
         <div className="p-4 mt-auto">
-          <button className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all">
+          <button 
+            onClick={() => signOut({ callbackUrl: '/admin/login' })}
+            className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all"
+          >
             <LogOut className="w-5 h-5" />
             <span className="text-sm font-medium">Logout</span>
           </button>
