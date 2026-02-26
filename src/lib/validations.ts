@@ -55,7 +55,6 @@ export const registrationSchema = z.object({
   futureGoals: z.string().max(500, 'Future goals must be under 500 characters').optional(),
 
   // Step 4: Additional Info
-  otherSports: z.string().max(100, 'Text too long').optional(),
   leadershipRole: z.string().max(100, 'Text too long').optional(),
   householdIncome: z.coerce.number()
     .min(0, 'Income cannot be negative')
@@ -72,6 +71,7 @@ export type RegistrationData = z.infer<typeof registrationSchema>;
 export const signupSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   email: z.string().email('Please enter a valid email address'),
+  sport: z.string().min(1, 'Please select your sport'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')

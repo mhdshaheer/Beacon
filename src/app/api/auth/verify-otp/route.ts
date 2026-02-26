@@ -48,6 +48,7 @@ export async function POST(req: Request) {
     await User.create({
       name: pendingUser.name,
       email: pendingUser.email,
+      sport: pendingUser.sport,
       password: pendingUser.passwordHashed,
       role: 'user',
       isVerified: true,

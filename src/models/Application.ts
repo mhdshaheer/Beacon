@@ -16,8 +16,9 @@ export interface IApplication extends Document {
     schoolName: string;
     grade: string;
   };
-  footballInfo: {
-    position: string;
+  sportsInfo: {
+    sport: string;
+    position: string; // or Role
     clubName: string;
     level: 'School' | 'District' | 'State' | 'National';
     experience: number;
@@ -26,9 +27,15 @@ export interface IApplication extends Document {
     futureGoals: string;
   };
   additionalInfo: {
-    otherSports: string;
     leadershipRole: string;
-    householdIncome: number;
+    fatherOccupation: string;
+    fatherIncome: number;
+    motherOccupation: string;
+    motherIncome: number;
+    isWorking: boolean;
+    userOccupation: string;
+    userIncome: number;
+    householdIncome: number; // This will store Total Monthly HH Income
   };
   documents: {
     certificates: string[];
@@ -60,7 +67,8 @@ const ApplicationSchema: Schema = new Schema(
       schoolName: { type: String },
       grade: { type: String },
     },
-    footballInfo: {
+    sportsInfo: {
+      sport: { type: String },
       position: { type: String },
       clubName: { type: String },
       level: { type: String, enum: ['School', 'District', 'State', 'National'] },
@@ -70,8 +78,14 @@ const ApplicationSchema: Schema = new Schema(
       futureGoals: { type: String },
     },
     additionalInfo: {
-      otherSports: { type: String },
       leadershipRole: { type: String },
+      fatherOccupation: { type: String },
+      fatherIncome: { type: Number },
+      motherOccupation: { type: String },
+      motherIncome: { type: Number },
+      isWorking: { type: Boolean, default: false },
+      userOccupation: { type: String },
+      userIncome: { type: Number },
       householdIncome: { type: Number },
     },
     documents: {

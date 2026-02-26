@@ -7,9 +7,9 @@ import { sendOTPEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, sport } = await req.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !sport) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
@@ -33,6 +33,8 @@ export async function POST(req: Request) {
       { email: normalizedEmail },
       { 
         name, 
+        email: normalizedEmail,
+        sport,
         passwordHashed: hashedPassword, 
         otpCode, 
         otpExpires,

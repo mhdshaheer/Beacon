@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IPendingUser extends Document {
   name: string;
   email: string;
+  sport: string;
   passwordHashed: string;
   otpCode: string;
   otpExpires: Date;
@@ -13,6 +14,7 @@ const PendingUserSchema: Schema = new Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    sport: { type: String },
     passwordHashed: { type: String, required: true },
     otpCode: { type: String, required: true },
     otpExpires: { type: Date, required: true },

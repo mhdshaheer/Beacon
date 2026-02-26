@@ -35,10 +35,30 @@ export default function ApplyPage() {
   const [formData, setFormData] = useState<any>({
     personalInfo: {},
     academicInfo: { isStudying: true },
-    footballInfo: {},
-    additionalInfo: {},
+    sportsInfo: { sport: (session?.user as any)?.sport || 'Football' },
+    additionalInfo: {
+      leadershipRole: '', 
+      fatherOccupation: '', 
+      fatherIncome: 0, 
+      motherOccupation: '', 
+      motherIncome: 0, 
+      isWorking: false, 
+      userOccupation: '', 
+      userIncome: 0, 
+      householdIncome: 0 
+    },
     documents: { certificates: [], awards: [], trophies: [] }
   });
+
+  const SPORTS_CONFIG: any = {
+    Football: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
+    Cricket: ['Batter', 'Bowler', 'All-rounder', 'Wicket-keeper'],
+    Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'],
+    Volleyball: ['Setter', 'Outside Hitter', 'Libero', 'Middle Blocker', 'Opposite Hitter'],
+    Tennis: ['Singles Player', 'Doubles Player'],
+    Shuttle: ['Singles Player', 'Doubles Player', 'Mixed Doubles'],
+    Other: ['Individual Athlete', 'Team Player']
+  };
 
   const [expanded, setExpanded] = useState<string | null>('personal');
 
@@ -58,7 +78,7 @@ export default function ApplyPage() {
         setFormData({
             personalInfo: data.personalInfo || {},
             academicInfo: { isStudying: true, ...data.academicInfo },
-            footballInfo: data.footballInfo || {},
+            sportsInfo: { sport: (session?.user as any)?.sport || 'Football', ...data.sportsInfo },
             additionalInfo: data.additionalInfo || {},
             documents: data.documents || { certificates: [], awards: [], trophies: [] },
             paymentStatus: data.paymentStatus
@@ -77,7 +97,15 @@ export default function ApplyPage() {
       const res = await fetch('/api/user/application/save-section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ section, data: formData[section] }),
+        body: JSON.stringify({ 
+          section, 
+          data: section === 'additionalInfo' ? {
+            ...formData[section],
+            householdIncome: (parseInt(formData.additionalInfo.fatherIncome) || 0) + 
+                             (parseInt(formData.additionalInfo.motherIncome) || 0) + 
+                             (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)
+          } : formData[section] 
+        }),
       });
 
       const result = await res.json();
@@ -85,9 +113,19 @@ export default function ApplyPage() {
       
       // Update local state with saved data
       if (result.application) {
+          // Special case for household income calculation if the backend doesn't do it
+          const ai = result.application.additionalInfo || {};
+          const calculatedTotal = (parseInt(ai.fatherIncome) || 0) + 
+                                  (parseInt(ai.motherIncome) || 0) + 
+                                  (ai.isWorking ? (parseInt(ai.userIncome) || 0) : 0);
+          
           setFormData({
               ...formData,
-              ...result.application
+              ...result.application,
+              additionalInfo: {
+                ...result.application.additionalInfo,
+                householdIncome: calculatedTotal
+              }
           });
       }
       
@@ -104,8 +142,14 @@ export default function ApplyPage() {
     const required: Record<string, string[]> = {
       personalInfo: ['fullName', 'dob', 'gender', 'phone', 'address', 'parentName'],
       academicInfo: data.isStudying ? ['schoolName', 'grade'] : [],
-      footballInfo: ['position', 'level', 'clubName', 'experience'],
-      additionalInfo: ['householdIncome']
+      sportsInfo: ['sport', 'position', 'level', 'clubName', 'experience'],
+      additionalInfo: [
+        'fatherOccupation', 
+        'fatherIncome', 
+        'motherOccupation', 
+        'motherIncome',
+        ...(data.isWorking ? ['userOccupation', 'userIncome'] : [])
+      ]
     };
     
     if (!required[section]) return 0;
@@ -121,7 +165,7 @@ export default function ApplyPage() {
   };
 
   const validateAllSections = () => {
-    const sections = ['personalInfo', 'academicInfo', 'footballInfo', 'additionalInfo'];
+    const sections = ['personalInfo', 'academicInfo', 'sportsInfo', 'additionalInfo'];
     for (const section of sections) {
       if (getMissingFieldsCount(section) > 0) return false;
     }
@@ -350,37 +394,47 @@ export default function ApplyPage() {
             />
           </SectionCard>
 
-          {/* Section: Football Info */}
+          {/* Section: Sport Info */}
           <SectionCard 
-            id="football"
-            title="Football Technical Details"
+            id="sports"
+            title="Sports Technical Details"
             icon={<Trophy className="w-5 h-5" />}
-            expanded={expanded === 'football'}
-            onToggle={() => setExpanded(expanded === 'football' ? null : 'football')}
-            isSaved={!!formData.footballInfo?.position}
-            missingCount={getMissingFieldsCount('footballInfo')}
+            expanded={expanded === 'sports'}
+            onToggle={() => setExpanded(expanded === 'sports' ? null : 'sports')}
+            isSaved={!!formData.sportsInfo?.position}
+            missingCount={getMissingFieldsCount('sportsInfo')}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Main Position</label>
+              <div className="md:col-span-2 space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Primary Sport</label>
                 <select 
                   className="input-field"
-                  value={formData.footballInfo.position || ''}
-                  onChange={(e) => setFormData({...formData, footballInfo: {...formData.footballInfo, position: e.target.value}})}
+                  value={formData.sportsInfo.sport || ''}
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, sport: e.target.value, position: ''}})}
+                >
+                  {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase">Role / Position</label>
+                <select 
+                  className="input-field"
+                  value={formData.sportsInfo.position || ''}
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, position: e.target.value}})}
                 >
                   <option value="">Select</option>
-                  <option value="Forward">Forward</option>
-                  <option value="Midfielder">Midfielder</option>
-                  <option value="Defender">Defender</option>
-                  <option value="Goalkeeper">Goalkeeper</option>
+                  {(SPORTS_CONFIG[formData.sportsInfo.sport] || SPORTS_CONFIG.Other).map((p: string) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
                 <select 
                   className="input-field"
-                  value={formData.footballInfo.level || ''}
-                  onChange={(e) => setFormData({...formData, footballInfo: {...formData.footballInfo, level: e.target.value}})}
+                  value={formData.sportsInfo.level || ''}
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, level: e.target.value}})}
                 >
                   <option value="">Select</option>
                   <option value="School">School</option>
@@ -390,11 +444,11 @@ export default function ApplyPage() {
                 </select>
               </div>
               <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Current Club / Academy</label>
+                <label className="text-xs font-bold text-gray-500 uppercase">Current Team / Club / Academy</label>
                 <input 
                   className="input-field" 
-                  value={formData.footballInfo.clubName || ''} 
-                  onChange={(e) => setFormData({...formData, footballInfo: {...formData.footballInfo, clubName: e.target.value}})}
+                  value={formData.sportsInfo.clubName || ''} 
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, clubName: e.target.value}})}
                 />
               </div>
               <div className="space-y-1">
@@ -402,23 +456,23 @@ export default function ApplyPage() {
                  <input 
                   type="number"
                   className="input-field" 
-                  value={formData.footballInfo.experience || 0} 
-                  onChange={(e) => setFormData({...formData, footballInfo: {...formData.footballInfo, experience: parseInt(e.target.value)}})}
+                  value={formData.sportsInfo.experience || 0} 
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, experience: parseInt(e.target.value)}})}
                 />
               </div>
               <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Achievements</label>
+                <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
                 <textarea 
                   className="input-field" 
                   placeholder="Tell us about your biggest wins..."
-                  value={formData.footballInfo.achievements || ''} 
-                  onChange={(e) => setFormData({...formData, footballInfo: {...formData.footballInfo, achievements: e.target.value}})}
+                  value={formData.sportsInfo.achievements || ''} 
+                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, achievements: e.target.value}})}
                 />
               </div>
             </div>
             <SaveButton 
-              onSave={() => handleSaveSection('footballInfo')} 
-              loading={savingSection === 'footballInfo'} 
+              onSave={() => handleSaveSection('sportsInfo')} 
+              loading={savingSection === 'sportsInfo'} 
             />
           </SectionCard>
 
@@ -432,14 +486,118 @@ export default function ApplyPage() {
             isSaved={!!formData.additionalInfo?.householdIncome}
             missingCount={getMissingFieldsCount('additionalInfo')}
           >
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1">
-                   <label className="text-xs font-bold text-gray-500 uppercase">Other Sports</label>
-                   <input className="input-field" value={formData.additionalInfo.otherSports || ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, otherSports: e.target.value}})} />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                {/* Father's Info */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Father's Details</h4>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
+                    <input 
+                      className="input-field" 
+                      placeholder="e.g. Business, Engineer"
+                      value={formData.additionalInfo.fatherOccupation || ''} 
+                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherOccupation: e.target.value}})} 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.additionalInfo.fatherIncome || 0} 
+                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherIncome: parseInt(e.target.value) || 0}})} 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1">
-                   <label className="text-xs font-bold text-gray-500 uppercase">HH Annual Income</label>
-                   <input type="number" className="input-field" value={formData.additionalInfo.householdIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, householdIncome: parseInt(e.target.value)}})} />
+
+                {/* Mother's Info */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Mother's Details</h4>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
+                    <input 
+                      className="input-field" 
+                      placeholder="e.g. Teacher, Homemaker"
+                      value={formData.additionalInfo.motherOccupation || ''} 
+                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherOccupation: e.target.value}})} 
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
+                    <input 
+                      type="number" 
+                      className="input-field" 
+                      value={formData.additionalInfo.motherIncome || 0} 
+                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherIncome: parseInt(e.target.value) || 0}})} 
+                    />
+                  </div>
+                </div>
+
+                {/* Self Info */}
+                <div className="md:col-span-2 p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-300">Are you currently working?</span>
+                    <div className="flex gap-2">
+                      {[
+                        { label: 'Yes', val: true },
+                        { label: 'No', val: false }
+                      ].map((opt) => (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => setFormData({...formData, additionalInfo: {...formData.additionalInfo, isWorking: opt.val}})}
+                          className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${
+                            formData.additionalInfo.isWorking === opt.val
+                              ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20'
+                              : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/20'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {formData.additionalInfo.isWorking && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5"
+                      >
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase">Your Occupation</label>
+                          <input 
+                            className="input-field outline-none" 
+                            value={formData.additionalInfo.userOccupation || ''} 
+                            onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userOccupation: e.target.value}})} 
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase">Your Monthly Income</label>
+                          <input 
+                            type="number" 
+                            className="input-field outline-none" 
+                            value={formData.additionalInfo.userIncome || 0} 
+                            onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userIncome: parseInt(e.target.value) || 0}})} 
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="md:col-span-2 space-y-1 bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10">
+                   <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Monthly HH Income</label>
+                      <span className="text-2xl font-black text-white">
+                        ₹{(parseInt(formData.additionalInfo.fatherIncome) || 0) + 
+                          (parseInt(formData.additionalInfo.motherIncome) || 0) + 
+                          (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)}
+                      </span>
+                   </div>
+                   <p className="text-[10px] text-gray-500 mt-2 italic">Automatically calculated based on the fields above.</p>
                 </div>
              </div>
              <SaveButton 

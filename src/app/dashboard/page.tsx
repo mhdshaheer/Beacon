@@ -157,7 +157,7 @@ export default function UserDashboard() {
 
                     <div className="p-6 bg-white/5 rounded-2xl border border-white/5 lg:flex items-center justify-between gap-6">
                        <div className="mb-4 lg:mb-0">
-                          <h4 className="font-bold text-gray-300 mb-1">Application for {application?.footballInfo?.position || 'Talent Scholarship'}</h4>
+                          <h4 className="font-bold text-gray-300 mb-1">Application for {application?.sportsInfo?.position || 'Talent Scholarship'}</h4>
                           <p className="text-xs text-gray-600">Submitted on {new Date(application.createdAt).toLocaleDateString()}</p>
                        </div>
                        <Link href="/dashboard/apply" className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 font-semibold transition-colors group">
@@ -168,7 +168,7 @@ export default function UserDashboard() {
                ) : (
                  <div className="py-12 flex flex-col items-center gap-4 border border-dashed border-white/10 rounded-3xl">
                     <CheckCircle2 className="w-12 h-12 text-gray-700" />
-                    <p className="text-gray-500 text-sm text-center max-w-xs">You haven't submitted your football details for the 2026 scholarship season yet.</p>
+                    <p className="text-gray-500 text-sm text-center max-w-xs">You haven't submitted your {(session?.user as any)?.sport || 'sports'} details for the 2026 scholarship season yet.</p>
                  </div>
                )}
             </div>
