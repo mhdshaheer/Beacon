@@ -157,7 +157,7 @@ export default function UserDashboard() {
 
                     <div className="p-6 bg-white/5 rounded-2xl border border-white/5 lg:flex items-center justify-between gap-6">
                        <div className="mb-4 lg:mb-0">
-                          <h4 className="font-bold text-gray-300 mb-1">Application for {application?.sportsInfo?.position || 'Talent Scholarship'}</h4>
+                           <h4 className="font-bold text-gray-300 mb-1">Application for {Array.isArray(application?.sportsInfo) && application.sportsInfo.length > 0 ? application.sportsInfo.map((s: any) => s.sport).join(', ') : 'Talent Scholarship'}</h4>
                           <p className="text-xs text-gray-600">Submitted on {new Date(application.createdAt).toLocaleDateString()}</p>
                        </div>
                        <Link href="/dashboard/apply" className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 font-semibold transition-colors group">

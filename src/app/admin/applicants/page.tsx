@@ -162,11 +162,11 @@ export default function ApplicantsManagement() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                      app.footballInfo.level === 'National' ? 'bg-purple-500/10 text-purple-400' :
-                      app.footballInfo.level === 'State' ? 'bg-blue-500/10 text-blue-400' :
+                      (Array.isArray(app.sportsInfo) && app.sportsInfo[0]?.level) === 'National' ? 'bg-purple-500/10 text-purple-400' :
+                      (Array.isArray(app.sportsInfo) && app.sportsInfo[0]?.level) === 'State' ? 'bg-blue-500/10 text-blue-400' :
                       'bg-gray-500/10 text-gray-400'
                     }`}>
-                      {app.footballInfo.level}
+                      {Array.isArray(app.sportsInfo) && app.sportsInfo.length > 0 ? app.sportsInfo.map((s: any) => s.sport).join(', ') : 'N/A'}
                     </span>
                   </td>
                   <td className="px-6 py-4">

@@ -16,16 +16,15 @@ export interface IApplication extends Document {
     schoolName: string;
     grade: string;
   };
-  sportsInfo: {
+  sportsInfo: Array<{
     sport: string;
-    position: string; // or Role
+    position: string;
     clubName: string;
     level: 'School' | 'District' | 'State' | 'National';
     experience: number;
     achievements: string;
-    honors: string;
-    futureGoals: string;
-  };
+    certificates: string[]; // file paths per sport
+  }>;
   additionalInfo: {
     leadershipRole: string;
     fatherOccupation: string;
@@ -67,16 +66,15 @@ const ApplicationSchema: Schema = new Schema(
       schoolName: { type: String },
       grade: { type: String },
     },
-    sportsInfo: {
+    sportsInfo: [{
       sport: { type: String },
       position: { type: String },
       clubName: { type: String },
       level: { type: String, enum: ['School', 'District', 'State', 'National'] },
       experience: { type: Number },
       achievements: { type: String },
-      honors: { type: String },
-      futureGoals: { type: String },
-    },
+      certificates: [{ type: String }],
+    }],
     additionalInfo: {
       leadershipRole: { type: String },
       fatherOccupation: { type: String },

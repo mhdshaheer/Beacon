@@ -18,7 +18,9 @@ import {
   CreditCard,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  X
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -35,7 +37,7 @@ export default function ApplyPage() {
   const [formData, setFormData] = useState<any>({
     personalInfo: {},
     academicInfo: { isStudying: true },
-    sportsInfo: { sport: (session?.user as any)?.sport || 'Football' },
+    sportsInfo: [{ sport: (session?.user as any)?.sport || 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] }],
     additionalInfo: {
       leadershipRole: '', 
       fatherOccupation: '', 
@@ -49,6 +51,8 @@ export default function ApplyPage() {
     },
     documents: { certificates: [], awards: [], trophies: [] }
   });
+
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const SPORTS_CONFIG: any = {
     Football: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
@@ -75,11 +79,14 @@ export default function ApplyPage() {
       const res = await fetch('/api/user/application/save-section');
       const data = await res.json();
       if (data && !data.error) {
+        const defaultSport = { sport: (session?.user as any)?.sport || 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] };
         setFormData((prev: any) => ({
             ...prev,
             personalInfo: data.personalInfo || {},
             academicInfo: { ...prev.academicInfo, ...(data.academicInfo || {}) },
-            sportsInfo: { ...prev.sportsInfo, ...(data.sportsInfo || {}) },
+            sportsInfo: Array.isArray(data.sportsInfo) && data.sportsInfo.length > 0 
+              ? data.sportsInfo.map((s: any) => ({ ...defaultSport, ...s, certificates: s.certificates || [] }))
+              : [defaultSport],
             additionalInfo: { ...prev.additionalInfo, ...(data.additionalInfo || {}) },
             documents: data.documents || { certificates: [], awards: [], trophies: [] },
             paymentStatus: data.paymentStatus
@@ -121,12 +128,9 @@ export default function ApplyPage() {
           
           setFormData((prev: any) => ({
               ...prev,
-              ...result.application,
-              // Deep merge sections to preserve local keys if needed, 
-              // but result.application should be authoritative now
               personalInfo: result.application.personalInfo || prev.personalInfo,
               academicInfo: { ...prev.academicInfo, ...result.application.academicInfo },
-              sportsInfo: { ...prev.sportsInfo, ...result.application.sportsInfo },
+              sportsInfo: Array.isArray(result.application.sportsInfo) ? result.application.sportsInfo : prev.sportsInfo,
               additionalInfo: { 
                 ...prev.additionalInfo, 
                 ...result.application.additionalInfo,
@@ -143,25 +147,39 @@ export default function ApplyPage() {
     }
   };
 
-  const getMissingFieldsCount = (section: string) => {
+  const getMissingFieldsCount = (section: string): number => {
+    // Special handling for sportsInfo (array of entries)
+    if (section === 'sportsInfo') {
+      if (!Array.isArray(formData.sportsInfo) || formData.sportsInfo.length === 0) return 1;
+      let count = 0;
+      formData.sportsInfo.forEach((entry: any) => {
+        if (!entry.sport) count++;
+        if (!entry.position) count++;
+        if (!entry.level) count++;
+        if (!entry.clubName) count++;
+        if (entry.experience === undefined || entry.experience === null) count++;
+      });
+      return count;
+    }
+
     const data = formData[section] || {};
-    const required: Record<string, string[]> = {
-      personalInfo: ['fullName', 'dob', 'gender', 'phone', 'address', 'parentName'],
-      academicInfo: data.isStudying ? ['schoolName', 'grade'] : [],
-      sportsInfo: ['sport', 'position', 'level', 'clubName', 'experience'],
-      additionalInfo: [
-        'fatherOccupation', 
-        'fatherIncome', 
-        'motherOccupation', 
-        'motherIncome',
-        ...(data.isWorking ? ['userOccupation', 'userIncome'] : [])
-      ]
-    };
     
-    if (!required[section]) return 0;
+    let requiredFields: string[] = [];
+    if (section === 'personalInfo') {
+      requiredFields = ['fullName', 'dob', 'gender', 'phone', 'address', 'parentName'];
+    } else if (section === 'academicInfo') {
+      requiredFields = data.isStudying ? ['schoolName', 'grade'] : [];
+    } else if (section === 'additionalInfo') {
+      requiredFields = [
+        'fatherOccupation', 'fatherIncome', 'motherOccupation', 'motherIncome',
+        ...(data.isWorking ? ['userOccupation', 'userIncome'] : [])
+      ];
+    } else {
+      return 0;
+    }
     
     let count = 0;
-    required[section].forEach(field => {
+    requiredFields.forEach(field => {
       const value = data[field];
       if (value === undefined || value === null || value === '' || (typeof value === 'number' && isNaN(value))) {
         count++;
@@ -400,82 +418,161 @@ export default function ApplyPage() {
             />
           </SectionCard>
 
-          {/* Section: Sport Info */}
+          {/* Section: Sports Info (Multi) */}
           <SectionCard 
             id="sports"
-            title="Sports Technical Details"
+            title={`Sports Technical Details (${formData.sportsInfo.length})`}
             icon={<Trophy className="w-5 h-5" />}
             expanded={expanded === 'sports'}
             onToggle={() => setExpanded(expanded === 'sports' ? null : 'sports')}
-            isSaved={!!formData.sportsInfo?.position}
+            isSaved={formData.sportsInfo?.length > 0 && !!formData.sportsInfo[0]?.position}
             missingCount={getMissingFieldsCount('sportsInfo')}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Primary Sport</label>
-                <select 
-                  className="input-field"
-                  value={formData.sportsInfo.sport || ''}
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, sport: e.target.value, position: ''}})}
-                >
-                  {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
+            <div className="space-y-8">
+              {formData.sportsInfo.map((entry: any, idx: number) => {
+                const updateEntry = (field: string, value: any) => {
+                  const updated = [...formData.sportsInfo];
+                  updated[idx] = { ...updated[idx], [field]: value };
+                  setFormData({ ...formData, sportsInfo: updated });
+                };
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Role / Position</label>
-                <select 
-                  className="input-field"
-                  value={formData.sportsInfo.position || ''}
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, position: e.target.value}})}
-                >
-                  <option value="">Select</option>
-                  {(SPORTS_CONFIG[formData.sportsInfo.sport] || SPORTS_CONFIG.Other).map((p: string) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
-                <select 
-                  className="input-field"
-                  value={formData.sportsInfo.level || ''}
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, level: e.target.value}})}
-                >
-                  <option value="">Select</option>
-                  <option value="School">School</option>
-                  <option value="District">District</option>
-                  <option value="State">State</option>
-                  <option value="National">National</option>
-                </select>
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Current Team / Club / Academy</label>
-                <input 
-                  className="input-field" 
-                  value={formData.sportsInfo.clubName || ''} 
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, clubName: e.target.value}})}
-                />
-              </div>
-              <div className="space-y-1">
-                 <label className="text-xs font-bold text-gray-500 uppercase">Years Experience</label>
-                 <input 
-                  type="number"
-                  className="input-field" 
-                  value={formData.sportsInfo.experience || 0} 
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, experience: parseInt(e.target.value)}})}
-                />
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
-                <textarea 
-                  className="input-field" 
-                  placeholder="Tell us about your biggest wins..."
-                  value={formData.sportsInfo.achievements || ''} 
-                  onChange={(e) => setFormData({...formData, sportsInfo: {...formData.sportsInfo, achievements: e.target.value}})}
-                />
-              </div>
+                const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingIdx(idx);
+                  try {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    const updated = [...formData.sportsInfo];
+                    updated[idx] = { ...updated[idx], certificates: [...(updated[idx].certificates || []), data.url] };
+                    setFormData({ ...formData, sportsInfo: updated });
+                    showToast('Certificate uploaded', 'success');
+                  } catch (err: any) {
+                    showToast(err.message || 'Upload failed', 'error');
+                  } finally {
+                    setUploadingIdx(null);
+                  }
+                };
+
+                const removeCert = (certIdx: number) => {
+                  const updated = [...formData.sportsInfo];
+                  updated[idx] = { ...updated[idx], certificates: updated[idx].certificates.filter((_: any, i: number) => i !== certIdx) };
+                  setFormData({ ...formData, sportsInfo: updated });
+                };
+
+                return (
+                  <div key={idx} className="relative p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
+                    {/* Remove button */}
+                    {formData.sportsInfo.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const updated = formData.sportsInfo.filter((_: any, i: number) => i !== idx);
+                          setFormData({ ...formData, sportsInfo: updated });
+                        }}
+                        className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">
+                      Sport #{idx + 1}
+                    </h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Sport</label>
+                        <select className="input-field" value={entry.sport || ''}
+                          onChange={(e) => { updateEntry('sport', e.target.value); updateEntry('position', ''); }}>
+                          {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Role / Position</label>
+                        <select className="input-field" value={entry.position || ''}
+                          onChange={(e) => updateEntry('position', e.target.value)}>
+                          <option value="">Select</option>
+                          {(SPORTS_CONFIG[entry.sport] || SPORTS_CONFIG.Other).map((p: string) => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
+                        <select className="input-field" value={entry.level || ''}
+                          onChange={(e) => updateEntry('level', e.target.value)}>
+                          <option value="">Select</option>
+                          <option value="School">School</option>
+                          <option value="District">District</option>
+                          <option value="State">State</option>
+                          <option value="National">National</option>
+                        </select>
+                      </div>
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Team / Club / Academy</label>
+                        <input className="input-field" value={entry.clubName || ''}
+                          onChange={(e) => updateEntry('clubName', e.target.value)} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Years Experience</label>
+                        <input type="number" className="input-field" value={entry.experience || 0}
+                          onChange={(e) => updateEntry('experience', parseInt(e.target.value) || 0)} />
+                      </div>
+                      <div className="md:col-span-2 space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
+                        <textarea className="input-field" placeholder="Tell us about your biggest wins..."
+                          value={entry.achievements || ''}
+                          onChange={(e) => updateEntry('achievements', e.target.value)} />
+                      </div>
+
+                      {/* Certificate Upload */}
+                      <div className="md:col-span-2 space-y-3">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Certificates / Proof</label>
+                        <div className="flex flex-wrap gap-3">
+                          {(entry.certificates || []).map((cert: string, ci: number) => (
+                            <div key={ci} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300">
+                              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="max-w-[140px] truncate">Certificate {ci + 1}</span>
+                              <button type="button" onClick={() => removeCert(ci)} className="text-red-400 hover:text-red-300">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <label className="border-2 border-dashed border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center hover:border-emerald-500/30 transition-all cursor-pointer bg-white/[0.01]">
+                          <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFileUpload} />
+                          {uploadingIdx === idx
+                            ? <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                            : <>
+                                <Upload className="w-6 h-6 text-gray-600 mb-2" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Upload Certificate</span>
+                                <span className="text-[9px] text-gray-700 mt-1">PDF, JPG, PNG (Max 2MB)</span>
+                              </>
+                          }
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Add Sport Button */}
+              <button
+                type="button"
+                onClick={() => setFormData({
+                  ...formData,
+                  sportsInfo: [...formData.sportsInfo, { sport: 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] }]
+                })}
+                className="w-full py-4 border-2 border-dashed border-white/10 rounded-3xl text-gray-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2 text-sm font-bold"
+              >
+                <PlusCircle className="w-5 h-5" /> Add Another Sport
+              </button>
             </div>
+
             <SaveButton 
               onSave={() => handleSaveSection('sportsInfo')} 
               loading={savingSection === 'sportsInfo'} 
@@ -612,31 +709,7 @@ export default function ApplyPage() {
             />
           </SectionCard>
 
-          {/* Section: Documents */}
-          <SectionCard 
-            id="documents"
-            title="Supporting Documents"
-            icon={<FileText className="w-5 h-5" />}
-            expanded={expanded === 'documents'}
-            onToggle={() => setExpanded(expanded === 'documents' ? null : 'documents')}
-            isSaved={formData.documents?.certificates?.length > 0}
-          >
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {['certificates', 'awards', 'trophies'].map((type) => (
-                   <div key={type} className="border-2 border-dashed border-white/5 rounded-3xl p-8 flex flex-col items-center justify-center hover:border-emerald-500/30 transition-all cursor-pointer bg-white/[0.02]">
-                      <Upload className="w-8 h-8 text-gray-700 mb-3" />
-                      <span className="text-sm font-bold uppercase tracking-wider text-gray-400">Upload {type}</span>
-                      <p className="text-[10px] text-gray-600 mt-2">PDF, JPG (Max 5MB)</p>
-                   </div>
-                ))}
-             </div>
-             <div className="mt-8 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex items-start gap-4">
-                <AlertCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-gray-500 leading-relaxed italic">
-                   Providing authentic certificates increases your scholarship eligibility by up to 40%.
-                </p>
-             </div>
-          </SectionCard>
+
 
           {/* Final Submission Card */}
           <div className="glass-card p-1 items-center overflow-hidden border-2 border-emerald-500/20 shadow-2xl shadow-emerald-500/5">
