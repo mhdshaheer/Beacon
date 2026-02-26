@@ -15,20 +15,60 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useConfirm } from '@/providers/ConfirmProvider';
+import { useToast } from '@/providers/ToastProvider';
 
 export default function ApplicantsManagement() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const { openConfirm } = useConfirm();
+  const { showToast } = useToast();
 
   useEffect(() => {
+    fetchApplications();
+  }, []);
+
+  const fetchApplications = () => {
+    setLoading(true);
     fetch('/api/admin/applications')
       .then(res => res.json())
       .then(json => {
         setData(json);
         setLoading(false);
       });
-  }, []);
+  };
+
+  const handleStatusUpdate = async (appId: string, status: 'approved' | 'rejected') => {
+    const isConfirmed = await openConfirm({
+      title: `${status.charAt(0).toUpperCase() + status.slice(1)} Application`,
+      message: `Are you sure you want to ${status} this scholarship application?`,
+      type: status === 'approved' ? 'info' : 'danger',
+      confirmText: status.charAt(0).toUpperCase() + status.slice(1),
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
+    try {
+      // Note: Assuming there's a PATCH endpoint for application status
+      // If not, I'll need to check the API
+      const res = await fetch(`/api/admin/applications/${appId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvalStatus: status }),
+      });
+
+      if (res.ok) {
+        showToast(`Application ${status} successfully`, 'success');
+        fetchApplications();
+      } else {
+        showToast('Failed to update status', 'error');
+      }
+    } catch (error) {
+      showToast('An error occurred', 'error');
+    }
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -147,15 +187,23 @@ export default function ApplicantsManagement() {
                       {app.approvalStatus.charAt(0)?.toUpperCase() + app.approvalStatus.slice(1)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="View Details">
                          <Eye className="w-4 h-4" />
                        </button>
-                       <button className="p-2 hover:bg-emerald-500/10 rounded-lg transition-colors text-emerald-400" title="Approve">
+                       <button 
+                         onClick={() => handleStatusUpdate(app._id, 'approved')}
+                         className="p-2 hover:bg-emerald-500/10 rounded-lg transition-colors text-emerald-400" 
+                         title="Approve"
+                       >
                          <Check className="w-4 h-4" />
                        </button>
-                       <button className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-red-400" title="Reject">
+                       <button 
+                         onClick={() => handleStatusUpdate(app._id, 'rejected')}
+                         className="p-2 hover:bg-red-500/10 rounded-lg transition-colors text-red-400" 
+                         title="Reject"
+                       >
                          <X className="w-4 h-4" />
                        </button>
                     </div>

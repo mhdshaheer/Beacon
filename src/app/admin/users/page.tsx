@@ -16,12 +16,14 @@ import {
   Clock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useConfirm } from '@/providers/ConfirmProvider';
 
 export default function UsersManagement() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
+  const { openConfirm } = useConfirm();
 
   useEffect(() => {
     fetchUsers();
@@ -55,7 +57,15 @@ export default function UsersManagement() {
   };
 
   const deleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    const isConfirmed = await openConfirm({
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      type: 'danger',
+      confirmText: 'Delete User',
+      cancelText: 'Cancel'
+    });
+    
+    if (!isConfirmed) return;
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',

@@ -5,6 +5,7 @@ import Script from "next/script";
 
 import { ToastProvider } from "@/providers/ToastProvider";
 import AuthProvider from "@/providers/AuthProvider";
+import { ConfirmProvider } from "@/providers/ConfirmProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,9 +29,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
+          <ConfirmProvider>
+            <ToastProvider>
+              {children}
+            </ToastProvider>
+          </ConfirmProvider>
         </AuthProvider>
       </body>
     </html>

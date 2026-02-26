@@ -12,6 +12,7 @@ import {
   FileText
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useConfirm } from '@/providers/ConfirmProvider';
 
 export default function AdminLayout({
   children,
@@ -19,6 +20,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { openConfirm } = useConfirm();
 
   const menuItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', href: '/admin' },
@@ -71,7 +73,15 @@ export default function AdminLayout({
 
         <div className="p-4 mt-auto">
           <button 
-            onClick={() => signOut({ callbackUrl: '/admin/login' })}
+            onClick={async () => {
+              const ok = await openConfirm({
+                title: 'Logout',
+                message: 'Are you sure you want to log out of the admin portal?',
+                confirmText: 'Logout',
+                cancelText: 'Stay'
+              });
+              if (ok) signOut({ callbackUrl: '/admin/login' });
+            }}
             className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all"
           >
             <LogOut className="w-5 h-5" />
