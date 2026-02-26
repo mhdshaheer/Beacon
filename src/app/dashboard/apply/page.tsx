@@ -75,14 +75,15 @@ export default function ApplyPage() {
       const res = await fetch('/api/user/application/save-section');
       const data = await res.json();
       if (data && !data.error) {
-        setFormData({
+        setFormData((prev: any) => ({
+            ...prev,
             personalInfo: data.personalInfo || {},
-            academicInfo: { isStudying: true, ...data.academicInfo },
-            sportsInfo: { sport: (session?.user as any)?.sport || 'Football', ...data.sportsInfo },
-            additionalInfo: data.additionalInfo || {},
+            academicInfo: { ...prev.academicInfo, ...(data.academicInfo || {}) },
+            sportsInfo: { ...prev.sportsInfo, ...(data.sportsInfo || {}) },
+            additionalInfo: { ...prev.additionalInfo, ...(data.additionalInfo || {}) },
             documents: data.documents || { certificates: [], awards: [], trophies: [] },
             paymentStatus: data.paymentStatus
-        });
+        }));
       }
     } catch (err) {
       console.error('Fetch error:', err);
@@ -113,20 +114,25 @@ export default function ApplyPage() {
       
       // Update local state with saved data
       if (result.application) {
-          // Special case for household income calculation if the backend doesn't do it
           const ai = result.application.additionalInfo || {};
           const calculatedTotal = (parseInt(ai.fatherIncome) || 0) + 
                                   (parseInt(ai.motherIncome) || 0) + 
                                   (ai.isWorking ? (parseInt(ai.userIncome) || 0) : 0);
           
-          setFormData({
-              ...formData,
+          setFormData((prev: any) => ({
+              ...prev,
               ...result.application,
-              additionalInfo: {
+              // Deep merge sections to preserve local keys if needed, 
+              // but result.application should be authoritative now
+              personalInfo: result.application.personalInfo || prev.personalInfo,
+              academicInfo: { ...prev.academicInfo, ...result.application.academicInfo },
+              sportsInfo: { ...prev.sportsInfo, ...result.application.sportsInfo },
+              additionalInfo: { 
+                ...prev.additionalInfo, 
                 ...result.application.additionalInfo,
                 householdIncome: calculatedTotal
               }
-          });
+          }));
       }
       
       showToast(`${section.replace('Info', '')} updated successfully`, 'success');

@@ -24,45 +24,45 @@ export async function POST(req: Request) {
     }
 
     await connectDB();
-    const data = await req.json();
+    const formData = await req.json();
     const userId = (session.user as any).id;
 
-    // 2. Create Application
-    const application = await Application.create({
-      userId,
-      personalInfo: {
-        fullName: data.fullName,
-        dob: new Date(data.dob),
-        gender: data.gender,
-        phone: data.phone,
-        email: data.email,
-        address: data.address,
-        parentName: data.parentName,
-      },
-      academicInfo: {
-        schoolName: data.schoolName,
-        grade: data.grade,
-      },
-      footballInfo: {
-        position: data.position,
-        clubName: data.clubName,
-        level: data.level,
-        experience: data.experience,
-        achievements: data.achievements,
-        honors: data.honors,
-        futureGoals: data.futureGoals,
-      },
-      additionalInfo: {
-        otherSports: data.otherSports,
-        leadershipRole: data.leadershipRole,
-        householdIncome: data.householdIncome,
-      },
-      paymentStatus: 'pending',
-      approvalStatus: 'pending',
-    });
+    // 1. Sanitize the data chunks to avoid _id conflicts in subdocuments
+    const sanitize = (obj: any) => {
+      if (!obj) return {};
+      const newObj = { ...obj };
+      delete newObj._id;
+      delete newObj.userId;
+      delete newObj.__v;
+      delete newObj.createdAt;
+      delete newObj.updatedAt;
+      return newObj;
+    };
 
-    // 3. Create Razorpay Order
-    const amount = 500 * 100; // Example fee: ₹500
+    const personalInfo = sanitize(formData.personalInfo);
+    if (personalInfo.dob) personalInfo.dob = new Date(personalInfo.dob);
+
+    const academicInfo = sanitize(formData.academicInfo);
+    const sportsInfo = sanitize(formData.sportsInfo);
+    const additionalInfo = sanitize(formData.additionalInfo);
+
+    // 2. Find or Update Application
+    let application = await Application.findOneAndUpdate(
+      { userId },
+      { 
+        $set: {
+          personalInfo,
+          academicInfo,
+          sportsInfo,
+          additionalInfo,
+          paymentStatus: 'pending'
+        }
+      },
+      { upsert: true, new: true, runValidators: false }
+    );
+
+    // 2. Create Razorpay Order
+    const amount = 500 * 100; // Registration fee: ₹500
     const options = {
       amount: amount,
       currency: 'INR',
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     const order = await razorpay.orders.create(options);
 
-    // 4. Update Application with Order ID
+    // 3. Update Application with Order ID
     application.razorpayOrderId = order.id;
     await application.save();
 

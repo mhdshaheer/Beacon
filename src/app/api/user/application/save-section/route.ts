@@ -38,11 +38,20 @@ export async function POST(req: Request) {
 
     // Prepare update object
     const update: any = {};
-    if (section === 'personalInfo') {
-        // Ensure DOB is a date object
-        if (data.dob) data.dob = new Date(data.dob);
+    
+    // Sanitize data: Remove fields that shouldn't be updated within a section
+    const sanitizedData = { ...data };
+    delete sanitizedData._id;
+    delete sanitizedData.userId;
+    delete sanitizedData.__v;
+    delete sanitizedData.createdAt;
+    delete sanitizedData.updatedAt;
+
+    if (section === 'personalInfo' && sanitizedData.dob) {
+        sanitizedData.dob = new Date(sanitizedData.dob);
     }
-    update[section] = data;
+    
+    update[section] = sanitizedData;
 
     const application = await Application.findOneAndUpdate(
       { userId },

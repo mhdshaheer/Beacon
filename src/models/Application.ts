@@ -101,6 +101,10 @@ const ApplicationSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-const Application: Model<IApplication> = mongoose.models.Application || mongoose.model<IApplication>('Application', ApplicationSchema);
+// Delete cached model to ensure schema changes (e.g. footballInfo -> sportsInfo) are picked up
+if (mongoose.models.Application) {
+  delete mongoose.models.Application;
+}
+const Application: Model<IApplication> = mongoose.model<IApplication>('Application', ApplicationSchema);
 
 export default Application;
