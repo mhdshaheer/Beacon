@@ -20,7 +20,7 @@ export default function Home() {
       <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-emerald-500/5 blur-[100px] rounded-full z-0" />
 
       {/* Hero Section */}
-      <section className="relative z-10 pt-32 pb-20 px-4 max-w-7xl mx-auto text-center">
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 max-w-7xl mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -36,8 +36,8 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="text-5xl md:text-7xl font-bold mb-8 leading-tight"
         >
-          Football Talent <br />
-          <span className="text-gradient">Registration 2026</span>
+          Empowering the <br />
+          <span className="text-gradient">Future of Sports</span>
         </motion.h1>
 
         <motion.p
@@ -46,7 +46,7 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12"
         >
-          Unleash your potential on the field. Join the elite scholarship program designed for the next generation of football stars.
+          A dedicated scholarship program designed to support athletes who show daily commitment and passion for their game.
         </motion.p>
 
         <motion.div
@@ -63,104 +63,116 @@ export default function Home() {
           </Link>
         </motion.div>
 
-        {/* Hero Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.8 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-24"
-        >
-          {[
-            { label: 'Scholarships', value: '50+' },
-            { label: 'Pro Mentors', value: '12' },
-            { label: 'Training Hours', value: '1500+' },
-            { label: 'Placement Rate', value: '94%' },
-          ].map((stat, i) => (
-            <div key={i} className="glass-card p-6">
-              <div className="text-2xl md:text-3xl font-bold text-emerald-400 mb-1">{stat.value}</div>
-              <div className="text-gray-500 text-sm font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </motion.div>
+
       </section>
 
-      {/* Benefits Section */}
-      <section id="benefits" className="relative z-10 py-24 px-4 max-w-7xl mx-auto">
+      {/* Who We Support Section */}
+      <section id="support" className="relative z-10 py-24 px-4 bg-white/[0.02] border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <motion.div {...fadeInUp} className="text-center mb-16 px-4">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6">Who We Support</h2>
+            <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+              The Beacon Scholarship proudly supports dedicated sportspersons who demonstrate consistency, discipline, and a strong commitment to daily practice.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {[
+              "Athletes born between 2002 and 2018",
+              "Sportspersons who practice or train daily, regardless of their competitive level",
+              "Players participating in local clubs, schools, academies, district, state, national, or professional platforms",
+              "Individuals from any sport who show passion, determination, and strong potential",
+              "Young athletes who may lack financial resources but are committed to improving their skills",
+              "Students balancing academics along with serious sports training"
+            ].map((text, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="glass-card p-6 flex gap-4 items-start hover:bg-white/10 transition-colors border border-white/5"
+              >
+                <div className="p-2 rounded-lg bg-emerald-500/10 shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                </div>
+                <p className="text-gray-300 text-sm leading-relaxed">{text}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div {...fadeInUp} className="text-center max-w-4xl mx-auto border-t border-white/5 pt-12">
+            <p className="text-gray-500 text-base md:text-lg italic leading-relaxed">
+              We believe age is not a limitation — dedication is what truly matters. Whether at the beginning of their journey or already competing at higher levels, every committed athlete deserves support and recognition.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Mission & Philosophy Section */}
+      <section className="relative z-10 py-24 px-4 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Our Program?</h2>
-          <div className="h-1 w-20 bg-emerald-500 mx-auto rounded-full" />
+          <h2 className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em] mb-4">Our Philosophy</h2>
+          <h3 className="text-3xl md:text-5xl font-bold mb-8">Lighting the Path for Dedicated Athletes</h3>
+          <p className="text-gray-400 text-lg max-w-4xl mx-auto leading-relaxed">
+            True excellence is built on daily consistency. We focus on recognizing the silent effort of every athlete, providing the resources needed to overcome financial and systemic barriers.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
           {[
             {
-              icon: <Trophy className="w-8 h-8" />,
-              title: "Performance Based Rewards",
-              desc: "Full and partial scholarships based on trial performance and achievements."
+              icon: <Shield className="w-6 h-6" />,
+              title: "Our Vision",
+              desc: "To be a guiding light for hardworking athletes, ensuring that passion and talent are never limited by lack of resources."
             },
             {
-              icon: <Users className="w-8 h-8" />,
-              title: "Elite Coaching",
-              desc: "Learn from UEFA and AFC certified coaches with international experience."
+              icon: <Users className="w-6 h-6" />,
+              title: "Elite Mentorship",
+              desc: "Gain access to professional coaching and career guidance to navigate your path from local grounds to national stages."
             },
             {
-              icon: <Shield className="w-8 h-8" />,
-              title: "Career Path",
-              desc: "Direct trials for professional clubs and national league teams."
+              icon: <Star className="w-6 h-6" />,
+              title: "Holistic Purpose",
+              desc: "We aim to reduce financial burdens, encourage academic balance, and foster a healthy, active sporting culture."
             }
-          ].map((benefit, i) => (
+          ].map((item, i) => (
             <motion.div
               key={i}
               {...fadeInUp}
               transition={{ delay: i * 0.1 }}
-              className="glass-card p-8 hover:bg-white/10 transition-colors"
+              className="glass-card p-8 border border-white/5 hover:bg-white/10 transition-all group"
             >
-              <div className="text-emerald-400 mb-6">{benefit.icon}</div>
-              <h3 className="text-xl font-bold mb-4">{benefit.title}</h3>
-              <p className="text-gray-400 leading-relaxed">{benefit.desc}</p>
+              <div className="text-emerald-500 mb-6 group-hover:scale-110 transition-transform">
+                {item.icon}
+              </div>
+              <h4 className="text-xl font-bold mb-4">{item.title}</h4>
+              <p className="text-gray-400 text-sm leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>
-      </section>
 
-      {/* Eligibility Section */}
-      <section id="eligibility" className="relative z-10 py-24 px-4 bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-          <motion.div {...fadeInUp}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Eligibility Criteria</h2>
-            <p className="text-gray-400 mb-8 text-lg">
-              We are looking for dedicated athletes who show exceptional promise both on and off the field.
-            </p>
-            <ul className="space-y-4">
-              {[
-                "Born between 2006 and 2012",
-                "Proven record in School or District level tournaments",
-                "Strong academic standing (Minimum 60%)",
-                "Committed to professional training schedule",
-                "Good conduct and sportsmanship record"
-              ].map((item, i) => (
-                <li key={i} className="flex items-center gap-3 text-gray-300">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="glass-card p-2 aspect-square relative"
-          >
-             <div className="absolute inset-4 rounded-xl bg-gradient-to-br from-emerald-500/20 to-transparent flex items-center justify-center overflow-hidden">
-                <Star className="w-32 h-32 text-emerald-500/20 animate-pulse" />
-             </div>
-             <div className="absolute bottom-10 left-10 glass-card p-6 max-w-[200px]">
-                <div className="text-emerald-400 font-bold text-2xl mb-1">Join Now</div>
-                <div className="text-gray-400 text-xs text-balance">Limited spots available for the 2026 intake.</div>
-             </div>
-          </motion.div>
-        </div>
+        <motion.div 
+          {...fadeInUp}
+          className="p-12 glass-card border-emerald-500/20 bg-emerald-500/5 text-center relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full" />
+          <h4 className="text-2xl font-bold mb-10 text-white">What Makes Us Different</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+            <div>
+              <div className="text-emerald-400 font-bold text-xl mb-2">Commitment over Fame</div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">We value your daily grind</p>
+            </div>
+            <div>
+              <div className="text-emerald-400 font-bold text-xl mb-2">Hard Work over Popularity</div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Efficiency earns recognition</p>
+            </div>
+            <div>
+              <div className="text-emerald-400 font-bold text-xl mb-2">Effort over Status</div>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Potential is our priority</p>
+            </div>
+          </div>
+        </motion.div>
       </section>
 
       {/* CTA Footer */}
