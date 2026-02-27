@@ -120,23 +120,24 @@ export default function ApplyPage() {
       if (!res.ok) throw new Error(result.error || 'Failed to save');
       
       // Update local state with saved data
-      if (result.application) {
-          const ai = result.application.additionalInfo || {};
-          const calculatedTotal = (parseInt(ai.fatherIncome) || 0) + 
-                                  (parseInt(ai.motherIncome) || 0) + 
-                                  (ai.isWorking ? (parseInt(ai.userIncome) || 0) : 0);
-          
-          setFormData((prev: any) => ({
-              ...prev,
-              personalInfo: result.application.personalInfo || prev.personalInfo,
-              academicInfo: { ...prev.academicInfo, ...result.application.academicInfo },
-              sportsInfo: Array.isArray(result.application.sportsInfo) ? result.application.sportsInfo : prev.sportsInfo,
-              additionalInfo: { 
-                ...prev.additionalInfo, 
-                ...result.application.additionalInfo,
-                householdIncome: calculatedTotal
-              }
-          }));
+      // Update local state with saved data only for the current section to prevent wiping drafts
+      if (result.application && result.application[section]) {
+          if (section === 'additionalInfo') {
+            const ai = result.application.additionalInfo || {};
+            const calculatedTotal = (parseInt(ai.fatherIncome) || 0) + 
+                                    (parseInt(ai.motherIncome) || 0) + 
+                                    (ai.isWorking ? (parseInt(ai.userIncome) || 0) : 0);
+            setFormData((prev: any) => ({ ...prev, additionalInfo: { ...result.application.additionalInfo, householdIncome: calculatedTotal } }));
+          } else if (section === 'sportsInfo') {
+            setFormData((prev: any) => ({ 
+              ...prev, 
+              sportsInfo: Array.isArray(result.application.sportsInfo) && result.application.sportsInfo.length > 0 
+                ? result.application.sportsInfo 
+                : prev.sportsInfo 
+            }));
+          } else {
+            setFormData((prev: any) => ({ ...prev, [section]: result.application[section] }));
+          }
       }
       
       showToast(`${section.replace('Info', '')} updated successfully`, 'success');
