@@ -40,15 +40,24 @@ export async function POST(req: Request) {
     const update: any = {};
     
     // Sanitize data: Remove fields that shouldn't be updated within a section
-    const sanitizedData = { ...data };
-    delete sanitizedData._id;
-    delete sanitizedData.userId;
-    delete sanitizedData.__v;
-    delete sanitizedData.createdAt;
-    delete sanitizedData.updatedAt;
+    let sanitizedData: any;
+    if (Array.isArray(data)) {
+        sanitizedData = data.map((item: any) => {
+            const newItem = { ...item };
+            delete newItem._id;
+            return newItem;
+        });
+    } else {
+        sanitizedData = { ...data };
+        delete sanitizedData._id;
+        delete sanitizedData.userId;
+        delete sanitizedData.__v;
+        delete sanitizedData.createdAt;
+        delete sanitizedData.updatedAt;
 
-    if (section === 'personalInfo' && sanitizedData.dob) {
-        sanitizedData.dob = new Date(sanitizedData.dob);
+        if (section === 'personalInfo' && sanitizedData.dob) {
+            sanitizedData.dob = new Date(sanitizedData.dob);
+        }
     }
     
     update[section] = sanitizedData;
