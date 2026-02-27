@@ -80,7 +80,7 @@ export default function AdminLayout({
                 confirmText: 'Logout',
                 cancelText: 'Stay'
               });
-              if (ok) signOut({ callbackUrl: '/admin/login' });
+              if (ok) signOut({ callbackUrl: '/login' });
             }}
             className="w-full flex items-center gap-3 p-3 text-gray-400 hover:text-red-400 hover:bg-red-400/5 rounded-xl transition-all"
           >

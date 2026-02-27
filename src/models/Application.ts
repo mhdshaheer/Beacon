@@ -12,22 +12,29 @@ export interface IApplication extends Document {
     parentName: string;
   };
   academicInfo: {
+    isStudying: boolean;
     schoolName: string;
     grade: string;
   };
-  footballInfo: {
+  sportsInfo: Array<{
+    sport: string;
     position: string;
     clubName: string;
     level: 'School' | 'District' | 'State' | 'National';
     experience: number;
     achievements: string;
-    honors: string;
-    futureGoals: string;
-  };
+    certificates: string[]; // file paths per sport
+  }>;
   additionalInfo: {
-    otherSports: string;
     leadershipRole: string;
-    householdIncome: number;
+    fatherOccupation: string;
+    fatherIncome: number;
+    motherOccupation: string;
+    motherIncome: number;
+    isWorking: boolean;
+    userOccupation: string;
+    userIncome: number;
+    householdIncome: number; // This will store Total Monthly HH Income
   };
   documents: {
     certificates: string[];
@@ -35,7 +42,7 @@ export interface IApplication extends Document {
     trophies: string[];
   };
   paymentStatus: 'pending' | 'completed' | 'failed';
-  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'pending' | 'viewed' | 'approved' | 'rejected';
   razorpayOrderId?: string;
   razorpayPaymentId?: string;
   createdAt: Date;
@@ -46,30 +53,37 @@ const ApplicationSchema: Schema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     personalInfo: {
-      fullName: { type: String, required: true },
-      dob: { type: Date, required: true },
-      gender: { type: String, enum: ['male', 'female', 'other'], required: true },
-      phone: { type: String, required: true },
-      email: { type: String, required: true },
-      address: { type: String, required: true },
-      parentName: { type: String, required: true },
+      fullName: { type: String },
+      dob: { type: Date },
+      gender: { type: String, enum: ['male', 'female', 'other'] },
+      phone: { type: String },
+      email: { type: String },
+      address: { type: String },
+      parentName: { type: String },
     },
     academicInfo: {
-      schoolName: { type: String, required: true },
-      grade: { type: String, required: true },
+      isStudying: { type: Boolean, default: true },
+      schoolName: { type: String },
+      grade: { type: String },
     },
-    footballInfo: {
-      position: { type: String, required: true },
-      clubName: { type: String, required: true },
-      level: { type: String, enum: ['School', 'District', 'State', 'National'], required: true },
-      experience: { type: Number, required: true },
+    sportsInfo: [{
+      sport: { type: String },
+      position: { type: String },
+      clubName: { type: String },
+      level: { type: String, enum: ['School', 'District', 'State', 'National'] },
+      experience: { type: Number },
       achievements: { type: String },
-      honors: { type: String },
-      futureGoals: { type: String },
-    },
+      certificates: [{ type: String }],
+    }],
     additionalInfo: {
-      otherSports: { type: String },
       leadershipRole: { type: String },
+      fatherOccupation: { type: String },
+      fatherIncome: { type: Number },
+      motherOccupation: { type: String },
+      motherIncome: { type: Number },
+      isWorking: { type: Boolean, default: false },
+      userOccupation: { type: String },
+      userIncome: { type: Number },
       householdIncome: { type: Number },
     },
     documents: {
@@ -78,13 +92,17 @@ const ApplicationSchema: Schema = new Schema(
       trophies: [{ type: String }],
     },
     paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
-    approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+    approvalStatus: { type: String, enum: ['pending', 'viewed', 'approved', 'rejected'], default: 'pending' },
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
   },
   { timestamps: true }
 );
 
-const Application: Model<IApplication> = mongoose.models.Application || mongoose.model<IApplication>('Application', ApplicationSchema);
+// Delete cached model to ensure schema changes (e.g. footballInfo -> sportsInfo) are picked up
+if (mongoose.models.Application) {
+  delete mongoose.models.Application;
+}
+const Application: Model<IApplication> = mongoose.model<IApplication>('Application', ApplicationSchema);
 
 export default Application;
