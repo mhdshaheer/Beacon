@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Application from '@/models/Application';
+import User from '@/models/User'; // Ensure User model is registered for populate
 
 export async function GET() {
   try {

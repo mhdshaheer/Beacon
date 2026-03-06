@@ -154,13 +154,22 @@ export default function RegisterPage() {
                       className="input-field pl-12 appearance-none"
                     >
                       <option value="">Select Sport</option>
-                      <option value="Football">Football</option>
                       <option value="Cricket">Cricket</option>
-                      <option value="Basketball">Basketball</option>
-                      <option value="Volleyball">Volleyball</option>
+                      <option value="Football">Football</option>
+                      <option value="Hockey">Hockey</option>
+                      <option value="Badminton">Badminton</option>
+                      <option value="Kabaddi">Kabaddi</option>
                       <option value="Tennis">Tennis</option>
-                      <option value="Shuttle">Shuttle</option>
-                      <option value="Other">Other</option>
+                      <option value="Table tennis">Table tennis</option>
+                      <option value="Boxing">Boxing</option>
+                      <option value="Wrestling">Wrestling</option>
+                      <option value="Chess">Chess</option>
+                      <option value="Athletes">Athletes</option>
+                      <option value="Swimming">Swimming</option>
+                      <option value="Weight lifting">Weight lifting</option>
+                      <option value="Volleyball">Volleyball</option>
+                      <option value="Hand ball">Hand ball</option>
+                      <option value="Archery">Archery</option>
                     </select>
                   </div>
                   {errors.sport && <p className="text-red-500 text-xs mt-1">{errors.sport.message}</p>}

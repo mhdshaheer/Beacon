@@ -95,15 +95,15 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
   const prevMonth = () => setViewDate(new Date(currentYear, currentMonth - 1, 1));
   const nextMonth = () => setViewDate(new Date(currentYear, currentMonth + 1, 1));
 
-  const isFuture = (day: number) => {
+  const isOutOfRange = (day: number) => {
     const date = new Date(currentYear, currentMonth, day);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date > today;
+    const minDate = new Date(2002, 0, 1);
+    const maxDate = new Date(2018, 11, 31);
+    return date < minDate || date > maxDate;
   };
 
   const handleDateClick = (day: number) => {
-    if (isFuture(day)) return;
+    if (isOutOfRange(day)) return;
     const newDate = new Date(currentYear, currentMonth, day);
     onChange(formatDate(newDate));
     setIsOpen(false);
@@ -132,7 +132,7 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
     );
   };
 
-  const years = Array.from({ length: 120 }, (_, i) => new Date().getFullYear() - i); 
+  const years = Array.from({ length: 2018 - 2002 + 1 }, (_, i) => 2018 - i); 
 
   return (
     <div className="relative space-y-1" ref={containerRef}>
@@ -209,10 +209,20 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
                       <ChevronDown className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-y-0.5 transition-transform" />
                     </button>
                     <div className="flex gap-1.5">
-                      <button type="button" onClick={prevMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
+                      <button 
+                        type="button" 
+                        onClick={prevMonth} 
+                        disabled={currentYear === 2002 && currentMonth === 0}
+                        className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white disabled:opacity-10 disabled:pointer-events-none"
+                      >
                         <ChevronLeft className="w-4.5 h-4.5" />
                       </button>
-                      <button type="button" onClick={nextMonth} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white">
+                      <button 
+                        type="button" 
+                        onClick={nextMonth} 
+                        disabled={currentYear === 2018 && currentMonth === 11}
+                        className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/70 hover:text-white disabled:opacity-10 disabled:pointer-events-none"
+                      >
                         <ChevronRight className="w-4.5 h-4.5" />
                       </button>
                     </div>
@@ -232,7 +242,7 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
                     ))}
                     {Array.from({ length: daysInMonth }).map((_, i) => {
                       const day = i + 1;
-                      const disabled = isFuture(day);
+                      const disabled = isOutOfRange(day);
                       const selected = isDaySelected(day);
                       return (
                         <button
@@ -261,21 +271,21 @@ export default function DatePicker({ value, onChange, error, label, placeholder 
                   className="absolute inset-0 overflow-y-auto scrollbar-hide grid grid-cols-3 gap-2.5 p-5 pt-6 animate-in fade-in zoom-in-95 duration-200"
                 >
                   {years.map((year) => {
-                    const isFutureYear = year > new Date().getFullYear();
+                    const isOutOfRangeYear = year < 2002 || year > 2018;
                     const isSelectedYear = year === currentYear;
                     return (
                       <button
                         key={year}
                         type="button"
                         data-active={isSelectedYear}
-                        onClick={() => !isFutureYear && handleYearSelect(year)}
-                        disabled={isFutureYear}
+                        onClick={() => !isOutOfRangeYear && handleYearSelect(year)}
+                        disabled={isOutOfRangeYear}
                         className={cn(
                           "h-11 text-sm font-bold rounded-xl transition-all",
                           isSelectedYear 
                             ? "bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.3)]" 
                             : "text-gray-400 hover:bg-white/10 hover:text-white border border-white/5",
-                          isFutureYear && "opacity-20 cursor-not-allowed pointer-events-none"
+                          isOutOfRangeYear && "opacity-20 cursor-not-allowed pointer-events-none"
                         )}
                       >
                         {year}
