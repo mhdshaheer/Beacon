@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
-import PendingUser from '@/models/PendingUser';
 
 export async function POST(req: Request) {
   try {
@@ -11,12 +10,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email and OTP are required' }, { status: 400 });
     }
 
-    await connectDB();
-
+    const mongoose = await connectDB();
     const normalizedEmail = email.toLowerCase().trim();
 
-    // 1. Find user in PENDING collection
-    const pendingUser = await PendingUser.findOne({ email: normalizedEmail });
+    // USE DIRECT COLLECTION ACCESS for the pending session
+    const db = mongoose.connection.db;
+    const pendingCollection = db.collection('pendingusers'); // Collection name from Mongoose model (lowercase + s)
+    const pendingUser = await pendingCollection.findOne({ email: normalizedEmail });
     
     if (!pendingUser) {
       return NextResponse.json({ 
@@ -25,44 +25,56 @@ export async function POST(req: Request) {
     }
 
     // 2. Validate OTP and expiration
-    const isOtpValid = pendingUser.otpCode === otp;
-    const isOtpExpired = new Date() > pendingUser.otpExpires;
+    const receivedOtp = String(otp || '').trim();
+    const storedOtp = String(pendingUser.otpCode || '').trim();
+    const isOtpValid = receivedOtp === storedOtp;
+    const isOtpExpired = pendingUser.otpExpires ? new Date() > new Date(pendingUser.otpExpires) : true;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`\n--- OTP VERIFY DEBUG for ${normalizedEmail} ---`);
-      console.log(`Provided OTP: "${otp}"`);
-      console.log(`Stored OTP:   "${pendingUser.otpCode}"`);
+      console.log(`\n--- [SIGNUP] OTP VERIFICATION DEBUG ---`);
+      console.log(`Email: [${normalizedEmail}]`);
+      console.log(`Received: [${receivedOtp}]`);
+      console.log(`Stored:   [${storedOtp}]`);
       console.log(`Is Match?     ${isOtpValid}`);
       console.log(`Is Expired?   ${isOtpExpired}\n`);
     }
 
     if (!isOtpValid) {
-      return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 });
+      return NextResponse.json({ error: 'The verification code you entered is incorrect. Please check your email and try again.' }, { status: 400 });
     }
 
     if (isOtpExpired) {
-      return NextResponse.json({ error: 'Verification code expired' }, { status: 400 });
+      return NextResponse.json({ error: 'This verification code has expired. Please sign up again to get a new code.' }, { status: 400 });
     }
 
     // 3. ATOMIC PROMOTION: Move to main User collection
-    await User.create({
-      name: pendingUser.name,
-      email: pendingUser.email,
-      sport: pendingUser.sport,
-      password: pendingUser.passwordHashed,
-      role: 'user',
-      isVerified: true,
-    });
+    try {
+      await User.create({
+        name: pendingUser.name,
+        email: pendingUser.email,
+        sport: pendingUser.sport,
+        password: pendingUser.passwordHashed,
+        role: 'user',
+        isVerified: true,
+      });
 
-    // 4. Clean up Pending collection
-    await PendingUser.deleteOne({ _id: pendingUser._id });
+      // 4. Clean up Pending collection
+      await pendingCollection.deleteOne({ _id: pendingUser._id });
+
+    } catch (dbError: unknown) {
+      console.error('Database Promotion Error:', dbError);
+      if ((dbError as any).code === 11000) { // eslint-disable-line @typescript-eslint/no-explicit-any
+        return NextResponse.json({ error: 'This user already exists in our system.' }, { status: 400 });
+      }
+      throw dbError;
+    }
 
     return NextResponse.json({ 
       message: 'Email verified and account created successfully! You can now login.' 
     }, { status: 200 });
 
   } catch (error) {
-    console.error('Verification error:', error);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    console.error('General Verification Error:', error);
+    return NextResponse.json({ error: 'Verification failed. Please try again later.' }, { status: 500 });
   }
 }

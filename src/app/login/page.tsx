@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Shield, Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, User as UserIcon } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Loader2, Eye, EyeOff, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -76,15 +76,22 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input-field pl-12 pr-12 h-12 bg-white/5 border-white/10 focus:border-emerald-500/50"
-              placeholder="••••••••"
             />
             <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+               type="button"
+               onClick={() => setShowPassword(!showPassword)}
+               className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+             >
+               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
+          </div>
+          <div className="flex justify-end mt-2">
+            <Link 
+              href="/auth/forgot-password" 
+              className="text-[10px] font-bold text-gray-500 hover:text-emerald-400 uppercase tracking-widest transition-colors"
+            >
+              Forgot Password?
+            </Link>
           </div>
         </div>
 
@@ -114,7 +121,7 @@ function LoginForm() {
 
         <div className="text-center pt-2">
           <p className="text-gray-500 text-sm">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="text-emerald-400 hover:underline font-semibold">
               Register Now
             </Link>
@@ -142,7 +149,7 @@ export default function LoginPage() {
              <UserIcon className="w-8 h-8 text-emerald-500" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome Back</h1>
-          <p className="text-gray-500 text-sm italic">"Only dedication matters"</p>
+          <p className="text-gray-500 text-sm italic">&quot;Only dedication matters&quot;</p>
         </div>
 
         <Suspense fallback={<div className="glass-card p-12 flex justify-center"><Loader2 className="animate-spin" /></div>}>

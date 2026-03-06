@@ -41,8 +41,8 @@ export default function RegisterPage() {
       setUserEmail(data.email);
       setStep('otp');
       showToast('Account created. Please verify your email with the OTP.', 'success');
-    } catch (error: any) {
-      showToast(error.message, 'error');
+    } catch (error: unknown) {
+      showToast((error as any).message || 'Signup failed', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -70,8 +70,37 @@ export default function RegisterPage() {
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
-    } catch (error: any) {
-      showToast(error.message, 'error');
+    } catch (error: unknown) {
+      showToast((error as any).message || 'Verification failed', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onResendOtp = async () => {
+    if (!userEmail) return;
+    setIsSubmitting(true);
+    try {
+      // We repeat the signup logic but the backend will just update the existing pending record
+      // with a new OTP and send it.
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: userEmail,
+          // These might be missing if we just have the email, 
+          // but since it is an upsert, we need to be careful.
+          // Better approach: create a dedicated resend endpoint.
+          resendOnly: true 
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to resend code');
+
+      showToast('A new verification code has been sent to your email.', 'success');
+    } catch (error: unknown) {
+      showToast((error as any).message || 'Failed to resend code', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -232,7 +261,7 @@ export default function RegisterPage() {
               </div>
               <h2 className="text-xl font-bold mb-2">Verify your email</h2>
               <p className="text-gray-500 text-sm mb-8 px-4">
-                We've sent a 6-digit verification code to <span className="text-white font-medium">{userEmail}</span>
+                We&apos;ve sent a 6-digit verification code to <span className="text-white font-medium">{userEmail}</span>
               </p>
 
               <div className="flex justify-between gap-2 mb-8">
@@ -267,8 +296,12 @@ export default function RegisterPage() {
 
               <div className="mt-8 text-sm">
                 <p className="text-gray-500">
-                  Didn't receive the code?{' '}
-                  <button className="text-emerald-400 hover:underline font-semibold">
+                  Didn&apos;t receive the code?{' '}
+                  <button 
+                    onClick={onResendOtp}
+                    disabled={isSubmitting}
+                    className="text-emerald-400 hover:underline font-semibold disabled:opacity-50"
+                  >
                     Resend OTP
                   </button>
                 </p>

@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/providers/ToastProvider';
 import { 
   ArrowLeft, 
-  Save, 
   Check, 
   Upload, 
   Loader2, 
@@ -711,7 +710,7 @@ export default function ApplyPage() {
              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
                 {/* Father's Info */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Father's Details</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Father&apos;s Details</h4>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
                     <input 
@@ -734,7 +733,7 @@ export default function ApplyPage() {
 
                 {/* Mother's Info */}
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Mother's Details</h4>
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Mother&apos;s Details</h4>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
                     <input 
@@ -907,19 +906,4 @@ function SectionCard({ id, title, icon, children, expanded, onToggle, isSaved, m
   );
 }
 
-function SaveButton({ onSave, loading }: any) {
-  return (
-    <div className="mt-8 flex justify-end px-2">
-      <button 
-        onClick={onSave}
-        disabled={loading}
-        className={`px-6 py-2.5 rounded-xl flex items-center gap-2 text-sm font-bold transition-all border ${
-          loading ? 'bg-white/5 text-gray-500 border-white/10' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-black'
-        }`}
-      >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {loading ? 'Saving...' : 'Save Section'}
-      </button>
-    </div>
-  );
-}
+
