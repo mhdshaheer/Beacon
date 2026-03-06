@@ -12,9 +12,14 @@ import {
   Eye,
   Check,
   X,
-  Loader2
+  Loader2,
+  User,
+  GraduationCap,
+  Trophy,
+  FileText,
+  IndianRupee
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirm } from '@/providers/ConfirmProvider';
 import { useToast } from '@/providers/ToastProvider';
 
@@ -23,6 +28,7 @@ export default function ApplicantsManagement() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [selectedApp, setSelectedApp] = useState<any>(null);
   const { openConfirm } = useConfirm();
   const { showToast } = useToast();
 
@@ -218,7 +224,9 @@ export default function ApplicantsManagement() {
                   </td>
                    <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
-                       <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="View Details">
+                       <button 
+                         onClick={() => setSelectedApp(app)}
+                         className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="View Details">
                          <Eye className="w-4 h-4" />
                        </button>
                        <button 
@@ -243,6 +251,202 @@ export default function ApplicantsManagement() {
           </table>
         </div>
       </div>
+      {/* Application Details Modal */}
+      <AnimatePresence>
+        {selectedApp && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-card w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col bg-[#050505] border-white/10 shadow-emerald-500/20 shadow-2xl"
+            >
+              <div className="flex justify-between items-center p-6 border-b border-white/5">
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedApp.personalInfo?.fullName}</h2>
+                  <p className="text-sm text-gray-500">{selectedApp.personalInfo?.email}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedApp(null)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto flex-1 space-y-8 custom-scrollbar">
+                {/* Personal Info */}
+                <section>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <User className="w-4 h-4 text-emerald-500" /> Personal Details
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+                    <DetailItem label="Phone" value={selectedApp.personalInfo?.phone} />
+                    <DetailItem label="Date of Birth" value={selectedApp.personalInfo?.dob ? new Date(selectedApp.personalInfo.dob).toLocaleDateString() : 'N/A'} />
+                    <DetailItem label="Gender" value={selectedApp.personalInfo?.gender} />
+                    <DetailItem label="Parent Name" value={selectedApp.personalInfo?.parentName} />
+                    <div className="col-span-2 md:col-span-4 mt-2">
+                      <DetailItem label="Address" value={selectedApp.personalInfo?.address} />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Academic Info */}
+                <section>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-emerald-500" /> Educational Background
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+                    <DetailItem label="Status" value={selectedApp.academicInfo?.isStudying ? 'Currently Studying' : 'Not Studying'} />
+                    <DetailItem label="Institution Name" value={selectedApp.academicInfo?.schoolName} />
+                    {selectedApp.academicInfo?.isStudying ? (
+                      <DetailItem label="Current Grade/Class" value={selectedApp.academicInfo?.grade} />
+                    ) : (
+                      <DetailItem label="Last Qualification" value={selectedApp.academicInfo?.lastQualification} />
+                    )}
+                  </div>
+                </section>
+
+                {/* Sports Info */}
+                <section>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-emerald-500" /> Sports Technical Details
+                  </h3>
+                  <div className="space-y-4">
+                    {selectedApp.sportsInfo?.map((sport: any, idx: number) => (
+                      <div key={idx} className="bg-white/5 p-4 rounded-xl border border-white/5 relative">
+                        <span className="absolute top-4 right-4 text-[10px] font-black uppercase text-emerald-500/50">Sport #{idx + 1}</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <DetailItem label="Sport" value={sport.sport} />
+                          <DetailItem label="Role/Position" value={sport.position} />
+                          <DetailItem label="Level of Play" value={sport.level === 'Other' ? sport.levelOther : sport.level} />
+                          <DetailItem label="Experience" value={sport.experience ? `${sport.experience} Years` : 'N/A'} />
+                          <div className="col-span-2 md:col-span-4 mt-2">
+                            <DetailItem label="Team/Club/Academy" value={sport.clubName} />
+                          </div>
+                          <div className="col-span-2 md:col-span-4 mt-2">
+                            <DetailItem label="Achievements" value={sport.achievements || 'None listed'} />
+                          </div>
+                        </div>
+                        {sport.certificates?.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-white/5">
+                            <p className="text-[10px] uppercase font-bold text-gray-500 mb-2">Attached Certificates</p>
+                            <div className="flex gap-2 flex-wrap">
+                              {sport.certificates.map((cert: any, cIdx: number) => (
+                                <a 
+                                  key={cIdx} 
+                                  href={cert.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                                >
+                                  <FileText className="w-3 h-3" /> Certificate {cIdx + 1}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Additional Info */}
+                <section>
+                  <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <IndianRupee className="w-4 h-4 text-emerald-500" /> Financial Background
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/5 p-4 rounded-xl border border-white/5">
+                     <div className="space-y-4">
+                        <div>
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">Father's Details</p>
+                          <div className="grid grid-cols-2 gap-4">
+                             <DetailItem label="Occupation" value={selectedApp.additionalInfo?.fatherOccupation} />
+                             <DetailItem label="Monthly Income" value={selectedApp.additionalInfo?.fatherIncome ? `₹${selectedApp.additionalInfo.fatherIncome}` : 'N/A'} />
+                          </div>
+                        </div>
+                     </div>
+                     <div className="space-y-4">
+                        <div>
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">Mother's Details</p>
+                          <div className="grid grid-cols-2 gap-4">
+                             <DetailItem label="Occupation" value={selectedApp.additionalInfo?.motherOccupation} />
+                             <DetailItem label="Monthly Income" value={selectedApp.additionalInfo?.motherIncome ? `₹${selectedApp.additionalInfo.motherIncome}` : 'N/A'} />
+                          </div>
+                        </div>
+                     </div>
+                     {selectedApp.additionalInfo?.isWorking && (
+                       <div className="md:col-span-2 pt-4 border-t border-white/5">
+                          <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-2">Applicant's Details</p>
+                          <div className="grid grid-cols-2 gap-4">
+                             <DetailItem label="Occupation" value={selectedApp.additionalInfo?.userOccupation} />
+                             <DetailItem label="Monthly Income" value={selectedApp.additionalInfo?.userIncome ? `₹${selectedApp.additionalInfo.userIncome}` : 'N/A'} />
+                          </div>
+                       </div>
+                     )}
+                     <div className="md:col-span-2 mt-4 flex items-center justify-between p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                        <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Household Income</p>
+                        <p className="text-xl font-black text-emerald-400 flex items-center">
+                          <IndianRupee className="w-5 h-5 mr-1" />{selectedApp.additionalInfo?.householdIncome || 0}
+                        </p>
+                     </div>
+                  </div>
+                </section>
+              </div>
+
+              <div className="p-6 border-t border-white/5 flex items-center justify-between bg-[#050505]">
+                <div className="text-sm font-bold text-gray-500 uppercase tracking-widest">Status:</div>
+                <div className="flex gap-3">
+                  {selectedApp.approvalStatus === 'pending' ? (
+                     <>
+                       <button
+                         onClick={async () => {
+                           await handleStatusUpdate(selectedApp._id, 'rejected');
+                           setSelectedApp(null);
+                         }}
+                         className="glass-button px-6 py-2 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all border border-transparent"
+                       >
+                         Reject
+                       </button>
+                       <button
+                         onClick={async () => {
+                           await handleStatusUpdate(selectedApp._id, 'approved');
+                           setSelectedApp(null);
+                         }}
+                         className="btn-primary px-8 py-2 text-sm flex items-center gap-2"
+                       >
+                         <Check className="w-4 h-4" /> Approve
+                       </button>
+                     </>
+                  ) : (
+                    <span className={`px-6 py-2 rounded-xl text-sm font-black uppercase tracking-wider ${
+                      selectedApp.approvalStatus === 'approved' 
+                        ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' 
+                        : 'text-red-400 bg-red-500/10 border border-red-500/20'
+                    }`}>
+                      {selectedApp.approvalStatus}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function DetailItem({ label, value }: { label: string, value: any }) {
+  return (
+    <div>
+      <div className="text-[10px] text-gray-500 uppercase font-black tracking-wider mb-1">{label}</div>
+      <div className="text-sm font-medium text-gray-200 capitalize">{value || 'N/A'}</div>
     </div>
   );
 }
