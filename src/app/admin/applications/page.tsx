@@ -389,12 +389,17 @@ export default function ApplicantsManagement() {
                           </div>
                        </div>
                      )}
-                     <div className="md:col-span-2 mt-4 flex items-center justify-between p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                        <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Household Income</p>
-                        <p className="text-xl font-black text-emerald-400 flex items-center">
-                          <IndianRupee className="w-5 h-5 mr-1" />{selectedApp.additionalInfo?.householdIncome || 0}
-                        </p>
-                     </div>
+                      <div className="md:col-span-2 mt-4 flex items-center justify-between p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                         <p className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Household Income</p>
+                         <p className="text-xl font-black text-emerald-400 flex items-center">
+                           <IndianRupee className="w-5 h-5 mr-1" />
+                           {(
+                             (parseInt(selectedApp.additionalInfo?.fatherIncome) || 0) +
+                             (parseInt(selectedApp.additionalInfo?.motherIncome) || 0) +
+                             (selectedApp.additionalInfo?.isWorking ? (parseInt(selectedApp.additionalInfo?.userIncome) || 0) : 0)
+                           ).toLocaleString('en-IN')}
+                         </p>
+                      </div>
                   </div>
                 </section>
               </div>
