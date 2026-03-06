@@ -86,6 +86,32 @@ export default function ApplicantsManagement() {
     }
   };
 
+  const markAsViewed = async (app: any) => {
+    // Only mark as viewed if currently pending
+    if (app.approvalStatus === 'pending') {
+      try {
+        await fetch(`/api/admin/applications/${app._id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approvalStatus: 'viewed' }),
+        });
+        // Update locally so table reflects change immediately
+        setData((prev: any) => ({
+          ...prev,
+          applications: prev.applications.map((a: any) =>
+            a._id === app._id ? { ...a, approvalStatus: 'viewed' } : a
+          ),
+        }));
+        // Also update the selectedApp so the modal footer badge updates
+        setSelectedApp({ ...app, approvalStatus: 'viewed' });
+      } catch (e) {
+        // Silently fail — viewing is not critical
+      }
+    } else {
+      setSelectedApp(app);
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505]">
       <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
@@ -215,18 +241,23 @@ export default function ApplicantsManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-sm ${
-                      app.approvalStatus === 'approved' ? 'text-emerald-400' : 
-                      app.approvalStatus === 'rejected' ? 'text-red-400' : 'text-gray-400'
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      app.approvalStatus === 'approved' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' : 
+                      app.approvalStatus === 'rejected' ? 'text-red-400 bg-red-500/10 border border-red-500/20' :
+                      app.approvalStatus === 'viewed' ? 'text-blue-400 bg-blue-500/10 border border-blue-500/20' :
+                      'text-amber-400 bg-amber-500/10 border border-amber-500/20'
                     }`}>
+                      {app.approvalStatus === 'viewed' && <Eye className="w-2.5 h-2.5" />}
                       {app.approvalStatus.charAt(0)?.toUpperCase() + app.approvalStatus.slice(1)}
                     </span>
                   </td>
                    <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                        <button 
-                         onClick={() => setSelectedApp(app)}
-                         className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white" title="View Details">
+                         onClick={() => markAsViewed(app)}
+                         className={`p-2 rounded-lg transition-colors ${
+                           app.approvalStatus === 'viewed' ? 'text-blue-400 hover:bg-blue-500/10' : 'text-gray-400 hover:bg-white/10 hover:text-white'
+                         }`} title={app.approvalStatus === 'viewed' ? 'View Details (Viewed)' : 'View Details'}>
                          <Eye className="w-4 h-4" />
                        </button>
                        <button 
