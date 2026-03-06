@@ -515,6 +515,7 @@ export default function ApplyPage() {
                   try {
                     await fetch('/api/upload', {
                       method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ public_id })
                     });
                   } catch (err) {
@@ -525,29 +526,45 @@ export default function ApplyPage() {
                 const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
+
+                  // Client-side validation
+                  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                  if (!allowedTypes.includes(file.type)) {
+                    showToast('Only JPG, PNG, WebP and PDF files are allowed', 'error');
+                    e.target.value = '';
+                    return;
+                  }
+                  if (file.size > 10 * 1024 * 1024) {
+                    showToast('File must be less than 10MB', 'error');
+                    e.target.value = '';
+                    return;
+                  }
+
                   setUploadingIdx(idx);
                   try {
                     const fd = new FormData();
                     fd.append('file', file);
                     const res = await fetch('/api/upload', { method: 'POST', body: fd });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
+                    if (!res.ok) throw new Error(data.error || 'Upload failed');
                     
                     const updated = [...formData.sportsInfo];
                     updated[idx] = { 
                       ...updated[idx], 
-                      certificates: [...(updated[idx].certificates || []), { url: data.url, public_id: data.public_id }] 
+                      certificates: [...(updated[idx].certificates || []), { url: data.url, public_id: data.public_id, name: file.name }] 
                     };
                     setFormData({ ...formData, sportsInfo: updated });
                     
-                    // Auto-save as draft
+                    // Auto-save after upload
                     await handleSaveSection('sportsInfo', updated);
                     
-                    showToast('Certificate uploaded and saved as draft', 'success');
+                    showToast(`"${file.name}" uploaded successfully!`, 'success');
                   } catch (err: any) {
-                    showToast(err.message || 'Upload failed', 'error');
+                    showToast(err.message || 'Upload failed. Please try again.', 'error');
                   } finally {
                     setUploadingIdx(null);
+                    // Reset input so same file can be re-uploaded
+                    e.target.value = '';
                   }
                 };
 
@@ -687,14 +704,18 @@ export default function ApplyPage() {
                             </div>
                           ))}
                         </div>
-                        <label className="border-2 border-dashed border-white/10 rounded-2xl p-5 flex flex-col items-center justify-center hover:border-emerald-500/30 transition-all cursor-pointer bg-white/[0.01]">
+                        <label className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center transition-all cursor-pointer bg-white/[0.01] ${
+                          uploadingIdx === idx 
+                            ? 'border-emerald-500/40 bg-emerald-500/5' 
+                            : 'border-white/10 hover:border-emerald-500/30 hover:bg-white/[0.03]'
+                        }`}>
                           <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFileUpload} />
                           {uploadingIdx === idx
                             ? <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
                             : <>
                                 <Upload className="w-6 h-6 text-gray-600 mb-2" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Upload Certificate</span>
-                                <span className="text-[9px] text-gray-700 mt-1">PDF, JPG, PNG (Max 2MB)</span>
+                                <span className="text-[9px] text-gray-700 mt-1">PDF, JPG, PNG (Max 10MB)</span>
                               </>
                           }
                         </label>
