@@ -262,10 +262,10 @@ export default function ApplyPage() {
           });
           const verifyData = await verifyRes.json();
           if (verifyData.success) {
-            showToast('Application Finalized!', 'success');
+            showToast('Application Finalized! 🎉', 'success');
             router.push('/dashboard');
           } else {
-            showToast('Payment verification failed.', 'error');
+            showToast('Payment verification failed. Please contact support.', 'error');
           }
         },
         prefill: {
@@ -274,9 +274,30 @@ export default function ApplyPage() {
           contact: formData.personalInfo.phone,
         },
         theme: { color: "#10b981" },
+        modal: {
+          ondismiss: () => {
+            setSavingSection(null);
+            showToast('Payment cancelled. You can retry anytime.', 'error');
+          }
+        }
       };
 
       const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', async function (response: any) {
+        // Record failed payment in DB
+        await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_payment_id: response.error?.metadata?.payment_id || '',
+            razorpay_order_id: response.error?.metadata?.order_id || orderData.orderId,
+            razorpay_signature: '',
+            failed: true,
+          }),
+        });
+        showToast(`Payment failed: ${response.error?.description || 'Unknown error'}. Please retry.`, 'error');
+        setSavingSection(null);
+      });
       rzp.open();
     } catch (error: any) {
       showToast(error.message, 'error');

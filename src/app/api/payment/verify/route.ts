@@ -6,20 +6,42 @@ import crypto from 'crypto';
 
 export async function POST(req: Request) {
   try {
-    const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = await req.json();
+    const body = await req.json();
+    const { razorpay_payment_id, razorpay_order_id, razorpay_signature, failed } = body;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    await connectDB();
+
+    // Handle explicit failure recording from the frontend
+    if (failed) {
+      const application = await Application.findOne({ razorpayOrderId: razorpay_order_id });
+      if (application) {
+        await Payment.findOneAndUpdate(
+          { razorpayOrderId: razorpay_order_id },
+          {
+            userId: application.userId,
+            applicationId: application._id,
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id || null,
+            amount: 500,
+            status: 'failed',
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`[VERIFY] Failed payment recorded for Order: ${razorpay_order_id}`);
+      }
+      return NextResponse.json({ success: false, recorded: true, message: 'Failure recorded' });
+    }
+
+    // Verify signature for successful payment
     const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-      .update(body.toString())
-      .digest("hex");
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
 
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-      await connectDB();
-
-      // Update Application
+      // Update Application as paid
       const application = await Application.findOneAndUpdate(
         { razorpayOrderId: razorpay_order_id },
         { 
@@ -30,16 +52,21 @@ export async function POST(req: Request) {
       );
 
       if (application) {
-        // Create Payment record
-        await Payment.create({
-          userId: application.userId,
-          applicationId: application._id,
-          razorpayOrderId: razorpay_order_id,
-          razorpayPaymentId: razorpay_payment_id,
-          razorpaySignature: razorpay_signature,
-          amount: 500, // Matching the amount from order creation
-          status: 'paid',
-        });
+        // Upsert Payment record (handles duplicates safely)
+        await Payment.findOneAndUpdate(
+          { razorpayOrderId: razorpay_order_id },
+          {
+            userId: application.userId,
+            applicationId: application._id,
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            amount: 500, // ₹500 (stored as rupees, not paise)
+            status: 'paid',
+          },
+          { upsert: true, new: true }
+        );
+        console.log(`[VERIFY] Payment success recorded for Order: ${razorpay_order_id}`);
       }
 
       return NextResponse.json({ success: true, message: 'Payment verified successfully' });
