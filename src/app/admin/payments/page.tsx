@@ -120,7 +120,7 @@ export default function PaymentsManagement() {
                   <td className="px-6 py-4">
                     <div className="font-bold flex items-center gap-0.5">
                        <IndianRupee className="w-3 h-3 text-gray-500" />
-                       {(payment.amount / 100).toLocaleString()}
+                       {payment.amount.toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4">
