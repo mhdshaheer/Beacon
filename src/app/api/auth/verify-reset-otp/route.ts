@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const mongoose = await connectDB();
     const normalizedEmail = email.toLowerCase().trim();
 
-    // USE DIRECT COLLECTION ACCESS (Bypasses Mongoose cached schemas and filters)
+    if (!mongoose.connection.db) throw new Error('Database connection failed');
     const collection = mongoose.connection.db.collection('users');
     const user = await collection.findOne({ email: normalizedEmail });
 
