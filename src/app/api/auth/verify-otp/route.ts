@@ -15,6 +15,7 @@ export async function POST(req: Request) {
 
     // USE DIRECT COLLECTION ACCESS for the pending session
     const db = mongoose.connection.db;
+    if (!db) throw new Error('Database connection failed');
     const pendingCollection = db.collection('pendingusers'); // Collection name from Mongoose model (lowercase + s)
     const pendingUser = await pendingCollection.findOne({ email: normalizedEmail });
     

@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     const mongoose = await connectDB();
     const normalizedEmail = email.toLowerCase().trim();
     const db = mongoose.connection.db;
+    if (!db) throw new Error('Database connection failed');
     const pendingCollection = db.collection('pendingusers');
     
     // 1. Check if user already exists in main collection
