@@ -82,7 +82,7 @@ export default function PaymentsManagement() {
           </div>
           <div className="flex gap-2">
             <select 
-              className="glass-button px-4 py-2 rounded-lg text-sm outline-none"
+              className="input-field w-auto min-w-[140px] px-4 py-2 h-10 text-sm cursor-pointer"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
