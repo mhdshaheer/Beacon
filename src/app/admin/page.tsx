@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           value={data.applications.total} 
           icon={<FileText className="w-6 h-6" />} 
           color="bg-emerald-500/20 text-emerald-400" 
-          link="/admin/applicants"
+          link="/admin/applications"
         />
         <StatCard 
           label="Successful Payments" 
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
                  <QuickLink 
                     title="Application Review" 
                     description="Process scholarship applications and verify levels."
-                    href="/admin/applicants"
+                    href="/admin/applications"
                     icon={<FileText className="w-5 h-5 text-emerald-400" />}
                  />
                  <QuickLink 
