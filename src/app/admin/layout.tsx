@@ -25,7 +25,7 @@ export default function AdminLayout({
   const menuItems = [
     { icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', href: '/admin' },
     { icon: <Users className="w-5 h-5" />, label: 'Users', href: '/admin/users' },
-    { icon: <FileText className="w-5 h-5" />, label: 'Applications', href: '/admin/applicants' },
+    { icon: <FileText className="w-5 h-5" />, label: 'Applications', href: '/admin/applications' },
     { icon: <CreditCard className="w-5 h-5" />, label: 'Payments', href: '/admin/payments' },
     { icon: <Settings className="w-5 h-5" />, label: 'Settings', href: '/admin/settings' },
   ];
