@@ -158,7 +158,7 @@ export default function ApplicantsManagement() {
           </div>
           <div className="flex gap-2">
             <select 
-              className="glass-button px-4 py-2 rounded-lg text-sm outline-none"
+              className="input-field w-auto min-w-[140px] px-4 py-2 h-10 text-sm cursor-pointer"
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             >
@@ -169,8 +169,8 @@ export default function ApplicantsManagement() {
               <option value="School">School</option>
               <option value="Other">Other</option>
             </select>
-            <button className="glass-button p-2.5 rounded-lg">
-              <Filter className="w-4 h-4" />
+            <button className="input-field w-10 h-10 p-0 flex items-center justify-center hover:bg-[#222] transition-colors">
+              <Filter className="w-4 h-4 text-gray-400" />
             </button>
           </div>
         </div>
