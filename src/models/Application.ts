@@ -15,15 +15,17 @@ export interface IApplication extends Document {
     isStudying: boolean;
     schoolName: string;
     grade: string;
+    lastQualification: string;
   };
   sportsInfo: Array<{
     sport: string;
     position: string;
     clubName: string;
-    level: 'School' | 'District' | 'State' | 'National';
+    level: 'School' | 'District' | 'State' | 'National' | 'Other';
+    levelOther?: string;
     experience: number;
     achievements: string;
-    certificates: string[]; // file paths per sport
+    certificates: Array<{ url: string; public_id: string }>; // objects per sport
   }>;
   additionalInfo: {
     leadershipRole: string;
@@ -37,9 +39,9 @@ export interface IApplication extends Document {
     householdIncome: number; // This will store Total Monthly HH Income
   };
   documents: {
-    certificates: string[];
-    awards: string[];
-    trophies: string[];
+    certificates: Array<{ url: string; public_id: string }>;
+    awards: Array<{ url: string; public_id: string }>;
+    trophies: Array<{ url: string; public_id: string }>;
   };
   paymentStatus: 'pending' | 'completed' | 'failed';
   approvalStatus: 'pending' | 'viewed' | 'approved' | 'rejected';
@@ -65,15 +67,20 @@ const ApplicationSchema: Schema = new Schema(
       isStudying: { type: Boolean, default: true },
       schoolName: { type: String },
       grade: { type: String },
+      lastQualification: { type: String },
     },
     sportsInfo: [{
       sport: { type: String },
       position: { type: String },
       clubName: { type: String },
-      level: { type: String, enum: ['School', 'District', 'State', 'National'] },
+      level: { type: String, enum: ['School', 'District', 'State', 'National', 'Other'] },
+      levelOther: { type: String },
       experience: { type: Number },
       achievements: { type: String },
-      certificates: [{ type: String }],
+      certificates: [{
+        url: { type: String },
+        public_id: { type: String }
+      }],
     }],
     additionalInfo: {
       leadershipRole: { type: String },
@@ -87,9 +94,9 @@ const ApplicationSchema: Schema = new Schema(
       householdIncome: { type: Number },
     },
     documents: {
-      certificates: [{ type: String }],
-      awards: [{ type: String }],
-      trophies: [{ type: String }],
+      certificates: [{ url: { type: String }, public_id: { type: String } }],
+      awards: [{ url: { type: String }, public_id: { type: String } }],
+      trophies: [{ url: { type: String }, public_id: { type: String } }],
     },
     paymentStatus: { type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' },
     approvalStatus: { type: String, enum: ['pending', 'viewed', 'approved', 'rejected'], default: 'pending' },

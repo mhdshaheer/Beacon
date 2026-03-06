@@ -20,7 +20,9 @@ import {
   ChevronUp,
   AlertCircle,
   Trash2,
-  X
+  X,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -36,7 +38,7 @@ export default function ApplyPage() {
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [formData, setFormData] = useState<any>({
     personalInfo: {},
-    academicInfo: { isStudying: true },
+    academicInfo: { isStudying: true, lastQualification: '' },
     sportsInfo: [{ sport: (session?.user as any)?.sport || 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] }],
     additionalInfo: {
       leadershipRole: '', 
@@ -55,13 +57,22 @@ export default function ApplyPage() {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const SPORTS_CONFIG: any = {
-    Football: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
     Cricket: ['Batter', 'Bowler', 'All-rounder', 'Wicket-keeper'],
-    Basketball: ['Point Guard', 'Shooting Guard', 'Small Forward', 'Power Forward', 'Center'],
-    Volleyball: ['Setter', 'Outside Hitter', 'Libero', 'Middle Blocker', 'Opposite Hitter'],
+    Football: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
+    Hockey: ['Forward', 'Midfielder', 'Defender', 'Goalkeeper'],
+    Badminton: ['Singles Player', 'Doubles Player', 'Mixed Doubles'],
+    Kabaddi: ['Raider', 'Defender', 'All-rounder'],
     Tennis: ['Singles Player', 'Doubles Player'],
-    Shuttle: ['Singles Player', 'Doubles Player', 'Mixed Doubles'],
-    Other: ['Individual Athlete', 'Team Player']
+    'Table tennis': ['Singles Player', 'Doubles Player', 'Mixed Doubles'],
+    Boxing: ['Lightweight', 'Welterweight', 'Middleweight', 'Heavyweight', 'Other'],
+    Wrestling: ['Freestyle', 'Greco-Roman', 'Other'],
+    Chess: ['Player'],
+    Athletes: ['Sprinter', 'Long Distance', 'Jumper', 'Thrower', 'Other'],
+    Swimming: ['Freestyle', 'Backstroke', 'Breaststroke', 'Butterfly', 'Medley'],
+    'Weight lifting': ['Snatch', 'Clean & Jerk', 'All'],
+    Volleyball: ['Setter', 'Outside Hitter', 'Libero', 'Middle Blocker', 'Opposite Hitter'],
+    'Hand ball': ['Goalkeeper', 'Left Wing', 'Left Back', 'Center Back', 'Right Back', 'Right Wing', 'Pivot'],
+    Archery: ['Recurve', 'Compound', 'Other']
   };
 
   const [expanded, setExpanded] = useState<string | null>('personal');
@@ -99,53 +110,71 @@ export default function ApplyPage() {
     }
   };
 
-  const handleSaveSection = async (section: string) => {
-    setSavingSection(section);
+  const handleSaveSection = async (section: string, manualData?: any, isAuto = false) => {
+    if (!section || section === '') return;
+    if (!isAuto) setSavingSection(section);
     try {
+      const dataToSave = manualData || (section === 'additionalInfo' ? {
+        ...formData[section],
+        householdIncome: (parseInt(formData.additionalInfo.fatherIncome) || 0) + 
+                         (parseInt(formData.additionalInfo.motherIncome) || 0) + 
+                         (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)
+      } : formData[section]);
+
       const res = await fetch('/api/user/application/save-section', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           section, 
-          data: section === 'additionalInfo' ? {
-            ...formData[section],
-            householdIncome: (parseInt(formData.additionalInfo.fatherIncome) || 0) + 
-                             (parseInt(formData.additionalInfo.motherIncome) || 0) + 
-                             (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)
-          } : formData[section] 
+          data: dataToSave
         }),
       });
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to save');
       
-      // Update local state with saved data
-      if (result.application) {
-          const ai = result.application.additionalInfo || {};
-          const calculatedTotal = (parseInt(ai.fatherIncome) || 0) + 
-                                  (parseInt(ai.motherIncome) || 0) + 
-                                  (ai.isWorking ? (parseInt(ai.userIncome) || 0) : 0);
+      // Sync state back only on manual saves or file uploads (isAuto = false)
+      if (result.application && !isAuto) {
+          const data = result.application;
+          const defaultSport = { sport: (session?.user as any)?.sport || 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] };
           
           setFormData((prev: any) => ({
               ...prev,
-              personalInfo: result.application.personalInfo || prev.personalInfo,
-              academicInfo: { ...prev.academicInfo, ...result.application.academicInfo },
-              sportsInfo: Array.isArray(result.application.sportsInfo) ? result.application.sportsInfo : prev.sportsInfo,
-              additionalInfo: { 
-                ...prev.additionalInfo, 
-                ...result.application.additionalInfo,
-                householdIncome: calculatedTotal
-              }
+              personalInfo: data.personalInfo || prev.personalInfo,
+              academicInfo: { ...prev.academicInfo, ...(data.academicInfo || {}) },
+              sportsInfo: Array.isArray(data.sportsInfo) && data.sportsInfo.length > 0 
+                ? data.sportsInfo.map((s: any) => ({ ...defaultSport, ...s, certificates: s.certificates || [] }))
+                : prev.sportsInfo,
+              additionalInfo: { ...prev.additionalInfo, ...(data.additionalInfo || {}) },
+              documents: data.documents || prev.documents,
           }));
       }
       
-      showToast(`${section.replace('Info', '')} updated successfully`, 'success');
+      if (!isAuto) showToast(`${section.replace('Info', '')} updated successfully`, 'success');
     } catch (error: any) {
-      showToast(error.message, 'error');
+      if (!isAuto) showToast(error.message, 'error');
     } finally {
-      setSavingSection(null);
+      if (!isAuto) setSavingSection(null);
     }
   };
+
+  // Auto-save debounced effect
+  useEffect(() => {
+    if (loading || status !== 'authenticated') return;
+
+    const timer = setTimeout(() => {
+      const activeSection = expanded === 'sports' ? 'sportsInfo' : 
+                           expanded === 'personal' ? 'personalInfo' : 
+                           expanded === 'academic' ? 'academicInfo' : 
+                           expanded === 'additional' ? 'additionalInfo' : null;
+      
+      if (activeSection) {
+        handleSaveSection(activeSection, null, true);
+      }
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timer);
+  }, [formData, expanded, loading, status]);
 
   const getMissingFieldsCount = (section: string): number => {
     // Special handling for sportsInfo (array of entries)
@@ -156,6 +185,7 @@ export default function ApplyPage() {
         if (!entry.sport) count++;
         if (!entry.position) count++;
         if (!entry.level) count++;
+        if (entry.level === 'Other' && !entry.levelOther) count++;
         if (!entry.clubName) count++;
         if (entry.experience === undefined || entry.experience === null) count++;
       });
@@ -166,9 +196,9 @@ export default function ApplyPage() {
     
     let requiredFields: string[] = [];
     if (section === 'personalInfo') {
-      requiredFields = ['fullName', 'dob', 'gender', 'phone', 'address', 'parentName'];
+      requiredFields = ['fullName', 'dob', 'gender', 'address', 'parentName'];
     } else if (section === 'academicInfo') {
-      requiredFields = data.isStudying ? ['schoolName', 'grade'] : [];
+      requiredFields = ['schoolName', ...(data.isStudying ? ['grade'] : ['lastQualification'])];
     } else if (section === 'additionalInfo') {
       requiredFields = [
         'fatherOccupation', 'fatherIncome', 'motherOccupation', 'motherIncome',
@@ -323,7 +353,12 @@ export default function ApplyPage() {
                 <input 
                   className="input-field" 
                   value={formData.personalInfo.phone || ''} 
-                  onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, phone: e.target.value}})}
+                  maxLength={10}
+                  placeholder="10-digit mobile number"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setFormData({...formData, personalInfo: {...formData.personalInfo, phone: val}});
+                  }}
                 />
               </div>
               <div className="md:col-span-2 space-y-1">
@@ -343,10 +378,6 @@ export default function ApplyPage() {
                 />
               </div>
             </div>
-            <SaveButton 
-              onSave={() => handleSaveSection('personalInfo')} 
-              loading={savingSection === 'personalInfo'} 
-            />
           </SectionCard>
 
           {/* Section: Academic Info */}
@@ -382,9 +413,10 @@ export default function ApplyPage() {
                 </div>
               </div>
 
-              <AnimatePresence>
-                {formData.academicInfo.isStudying && (
+              <AnimatePresence mode="wait">
+                {formData.academicInfo.isStudying ? (
                   <motion.div 
+                    key="studying"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
@@ -409,13 +441,36 @@ export default function ApplyPage() {
                       />
                     </div>
                   </motion.div>
+                ) : (
+                  <motion.div 
+                    key="not-studying"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
+                  >
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Last School / College Attended</label>
+                      <input 
+                        className="input-field" 
+                        placeholder="Enter last institution name"
+                        value={formData.academicInfo.schoolName || ''} 
+                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, schoolName: e.target.value}})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Last Qualification</label>
+                      <input 
+                        className="input-field" 
+                        placeholder="e.g. 12th Pass, Graduate"
+                        value={formData.academicInfo.lastQualification || ''} 
+                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, lastQualification: e.target.value}})}
+                      />
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>
-            <SaveButton 
-              onSave={() => handleSaveSection('academicInfo')} 
-              loading={savingSection === 'academicInfo'} 
-            />
           </SectionCard>
 
           {/* Section: Sports Info (Multi) */}
@@ -436,6 +491,17 @@ export default function ApplyPage() {
                   setFormData({ ...formData, sportsInfo: updated });
                 };
 
+                const handleFileDelete = async (public_id: string) => {
+                  try {
+                    await fetch('/api/upload', {
+                      method: 'DELETE',
+                      body: JSON.stringify({ public_id })
+                    });
+                  } catch (err) {
+                    console.error('Cloudinary deletion failed:', err);
+                  }
+                };
+
                 const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
@@ -446,10 +512,18 @@ export default function ApplyPage() {
                     const res = await fetch('/api/upload', { method: 'POST', body: fd });
                     const data = await res.json();
                     if (!res.ok) throw new Error(data.error);
+                    
                     const updated = [...formData.sportsInfo];
-                    updated[idx] = { ...updated[idx], certificates: [...(updated[idx].certificates || []), data.url] };
+                    updated[idx] = { 
+                      ...updated[idx], 
+                      certificates: [...(updated[idx].certificates || []), { url: data.url, public_id: data.public_id }] 
+                    };
                     setFormData({ ...formData, sportsInfo: updated });
-                    showToast('Certificate uploaded', 'success');
+                    
+                    // Auto-save as draft
+                    await handleSaveSection('sportsInfo', updated);
+                    
+                    showToast('Certificate uploaded and saved as draft', 'success');
                   } catch (err: any) {
                     showToast(err.message || 'Upload failed', 'error');
                   } finally {
@@ -457,10 +531,18 @@ export default function ApplyPage() {
                   }
                 };
 
-                const removeCert = (certIdx: number) => {
+                const removeCert = async (certIdx: number) => {
+                  const cert = formData.sportsInfo[idx].certificates[certIdx];
+                  if (cert?.public_id) {
+                    await handleFileDelete(cert.public_id);
+                  }
+                  
                   const updated = [...formData.sportsInfo];
                   updated[idx] = { ...updated[idx], certificates: updated[idx].certificates.filter((_: any, i: number) => i !== certIdx) };
                   setFormData({ ...formData, sportsInfo: updated });
+                  
+                  // Auto-save as draft after removal
+                  await handleSaveSection('sportsInfo', updated);
                 };
 
                 return (
@@ -501,16 +583,47 @@ export default function ApplyPage() {
                           ))}
                         </select>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
-                        <select className="input-field" value={entry.level || ''}
-                          onChange={(e) => updateEntry('level', e.target.value)}>
-                          <option value="">Select</option>
-                          <option value="School">School</option>
-                          <option value="District">District</option>
-                          <option value="State">State</option>
-                          <option value="National">National</option>
-                        </select>
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
+                          <select className="input-field" value={entry.level || ''}
+                            onChange={(e) => {
+                              const newLevel = e.target.value;
+                              const updated = [...formData.sportsInfo];
+                              updated[idx] = { 
+                                ...updated[idx], 
+                                level: newLevel,
+                                levelOther: newLevel === 'Other' ? (updated[idx].levelOther || '') : ''
+                              };
+                              setFormData({ ...formData, sportsInfo: updated });
+                            }}>
+                            <option value="">Select</option>
+                            <option value="School">School</option>
+                            <option value="District">District</option>
+                            <option value="State">State</option>
+                            <option value="National">National</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        
+                        <AnimatePresence>
+                          {entry.level === 'Other' && (
+                            <motion.div 
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden space-y-1"
+                            >
+                              <label className="text-xs font-bold text-gray-500 uppercase">Specify Other Level</label>
+                              <input 
+                                className="input-field" 
+                                placeholder="e.g. International, Regional"
+                                value={entry.levelOther || ''} 
+                                onChange={(e) => updateEntry('levelOther', e.target.value)}
+                              />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                       <div className="md:col-span-2 space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">Team / Club / Academy</label>
@@ -533,13 +646,24 @@ export default function ApplyPage() {
                       <div className="md:col-span-2 space-y-3">
                         <label className="text-xs font-bold text-gray-500 uppercase">Certificates / Proof</label>
                         <div className="flex flex-wrap gap-3">
-                          {(entry.certificates || []).map((cert: string, ci: number) => (
+                          {(entry.certificates || []).map((cert: any, ci: number) => (
                             <div key={ci} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300">
                               <FileText className="w-3.5 h-3.5 text-emerald-400" />
                               <span className="max-w-[140px] truncate">Certificate {ci + 1}</span>
-                              <button type="button" onClick={() => removeCert(ci)} className="text-red-400 hover:text-red-300">
-                                <X className="w-3.5 h-3.5" />
-                              </button>
+                              <div className="flex items-center gap-2 ml-1">
+                                <a 
+                                  href={cert.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                                  title="View Document"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </a>
+                                <button type="button" onClick={() => removeCert(ci)} className="text-red-400 hover:text-red-300 transition-colors ml-1" title="Remove">
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -572,11 +696,6 @@ export default function ApplyPage() {
                 <PlusCircle className="w-5 h-5" /> Add Another Sport
               </button>
             </div>
-
-            <SaveButton 
-              onSave={() => handleSaveSection('sportsInfo')} 
-              loading={savingSection === 'sportsInfo'} 
-            />
           </SectionCard>
 
           {/* Section: Additional Info */}
@@ -703,10 +822,6 @@ export default function ApplyPage() {
                    <p className="text-[10px] text-gray-500 mt-2 italic">Automatically calculated based on the fields above.</p>
                 </div>
              </div>
-             <SaveButton 
-              onSave={() => handleSaveSection('additionalInfo')} 
-              loading={savingSection === 'additionalInfo'} 
-            />
           </SectionCard>
 
 

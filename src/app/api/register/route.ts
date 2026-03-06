@@ -30,6 +30,13 @@ export async function POST(req: Request) {
     // 1. Sanitize the data chunks to avoid _id conflicts in subdocuments
     const sanitize = (obj: any) => {
       if (!obj) return {};
+      if (Array.isArray(obj)) {
+        return obj.map((item: any) => {
+           const newObj = { ...item };
+           delete newObj._id;
+           return newObj;
+        });
+      }
       const newObj = { ...obj };
       delete newObj._id;
       delete newObj.userId;

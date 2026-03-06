@@ -22,6 +22,7 @@ export default function ApplicantsManagement() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const { openConfirm } = useConfirm();
   const { showToast } = useToast();
 
@@ -32,9 +33,18 @@ export default function ApplicantsManagement() {
   const fetchApplications = () => {
     setLoading(true);
     fetch('/api/admin/applications')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch applications');
+        return res.json();
+      })
       .then(json => {
+        if (json.error) throw new Error(json.error);
         setData(json);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        showToast(err.message || 'An error occurred', 'error');
         setLoading(false);
       });
   };
@@ -76,8 +86,27 @@ export default function ApplicantsManagement() {
     </div>
   );
 
-  const stats = data.stats;
-  const applications = data.applications;
+  if (!data || data.error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] text-white p-4">
+      <h2 className="text-xl font-bold mb-4">Error Loading Applications</h2>
+      <p className="text-gray-400 mb-6">{data?.error || 'No data received from server'}</p>
+      <button onClick={fetchApplications} className="btn-primary px-6 py-2">Retry</button>
+    </div>
+  );
+
+  const stats = data.stats || { total: 0, paid: 0, pendingPayments: 0, approved: 0 };
+  
+  const applications = (data.applications || []).filter((app: any) => {
+    const matchesSearch = 
+      app.personalInfo?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+      app.personalInfo?.email?.toLowerCase().includes(search.toLowerCase());
+    
+    // Check if any sport entry matches the selected level filter
+    const sportEntries = Array.isArray(app.sportsInfo) ? app.sportsInfo : [];
+    const matchesLevel = filter === 'all' || sportEntries.some((s: any) => s.level === filter);
+    
+    return matchesSearch && matchesLevel;
+  });
 
   return (
     <div className="p-8">
@@ -123,6 +152,8 @@ export default function ApplicantsManagement() {
             <input 
               className="input-field pl-10 h-10 text-sm" 
               placeholder="Search by name or email..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex gap-2">
@@ -135,6 +166,8 @@ export default function ApplicantsManagement() {
               <option value="National">National</option>
               <option value="State">State</option>
               <option value="District">District</option>
+              <option value="School">School</option>
+              <option value="Other">Other</option>
             </select>
             <button className="glass-button p-2.5 rounded-lg">
               <Filter className="w-4 h-4" />
@@ -161,13 +194,9 @@ export default function ApplicantsManagement() {
                     <div className="text-xs text-gray-500">{app.personalInfo.email}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                      (Array.isArray(app.sportsInfo) && app.sportsInfo[0]?.level) === 'National' ? 'bg-purple-500/10 text-purple-400' :
-                      (Array.isArray(app.sportsInfo) && app.sportsInfo[0]?.level) === 'State' ? 'bg-blue-500/10 text-blue-400' :
-                      'bg-gray-500/10 text-gray-400'
-                    }`}>
-                      {Array.isArray(app.sportsInfo) && app.sportsInfo.length > 0 ? app.sportsInfo.map((s: any) => s.sport).join(', ') : 'N/A'}
-                    </span>
+                      {Array.isArray(app.sportsInfo) && app.sportsInfo.length > 0 
+                        ? app.sportsInfo.map((s: any) => `${s.sport} (${s.level === 'Other' ? s.levelOther : s.level})`).join(', ') 
+                        : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     <div className={`flex items-center gap-2 text-sm ${

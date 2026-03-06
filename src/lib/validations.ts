@@ -9,24 +9,16 @@ export const registrationSchema = z.object({
     .min(1, 'Date of birth is required')
     .refine((date) => {
       const selectedDate = new Date(date);
-      const today = new Date();
-      return selectedDate <= today;
-    }, 'Date of birth cannot be in the future')
-    .refine((date) => {
-      const selectedDate = new Date(date);
-      const today = new Date();
-      let age = today.getFullYear() - selectedDate.getFullYear();
-      const m = today.getMonth() - selectedDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < selectedDate.getDate())) {
-        age--;
-      }
-      return age >= 5 && age <= 100;
-    }, 'Age must be between 5 and 100 years'),
+      const minDate = new Date(2002, 0, 1);
+      const maxDate = new Date(2018, 11, 31);
+      return selectedDate >= minDate && selectedDate <= maxDate;
+    }, 'Date of birth must be between 2002 and 2018'),
   gender: z.string().min(1, 'Please select your gender'),
   phone: z.string()
-    .min(10, 'Phone number must be at least 10 digits')
-    .max(15, 'Phone number is too long')
-    .regex(/^[0-9]+$/, 'Phone number must contain only digits'),
+    .length(10, 'Phone number must be exactly 10 digits')
+    .regex(/^[0-9]+$/, 'Phone number must contain only digits')
+    .optional()
+    .or(z.literal('')),
   email: z.string().email('Please enter a valid email address'),
   address: z.string()
     .min(10, 'Please provide a full address (min 10 chars)')
@@ -40,6 +32,7 @@ export const registrationSchema = z.object({
     .min(3, 'School / College name is required')
     .max(100, 'Name is too long'),
   grade: z.string().min(1, 'Current grade / level is required'),
+  lastQualification: z.string().optional(),
 
   // Step 3: Football Background
   position: z.string().min(1, 'Please select your primary position'),

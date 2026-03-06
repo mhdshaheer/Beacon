@@ -35,10 +35,13 @@ export default function UserDashboard() {
   const fetchDashboardData = async () => {
     try {
       const res = await fetch('/api/user/dashboard');
+      if (!res.ok) throw new Error('Failed to fetch dashboard data');
       const result = await res.json();
+      if (result.error) throw new Error(result.error);
       setData(result);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
+    } catch (error: any) {
+      console.error('Dashboard error:', error);
+      setData({ error: error.message });
     } finally {
       setLoading(false);
     }
