@@ -15,7 +15,7 @@ export async function GET() {
     const stats = {
       totalRevenue: payments
         .filter(p => p.status === 'paid')
-        .reduce((sum, p) => sum + (p.amount / 100), 0),
+        .reduce((sum, p) => sum + p.amount, 0),
       count: payments.length,
       paidCount: payments.filter(p => p.status === 'paid').length,
       failedCount: payments.filter(p => p.status === 'failed').length,
