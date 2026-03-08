@@ -3,9 +3,11 @@
 interface StepperProps {
   currentStep: number;
   steps: string[];
+  onStepClick?: (step: number) => void;
+  missingFields?: number[]; // Array of counts for each step
 }
 
-export default function Stepper({ currentStep, steps }: StepperProps) {
+export default function Stepper({ currentStep, steps, onStepClick, missingFields }: StepperProps) {
   return (
     <div className="w-full mb-12">
       <div className="flex justify-between relative">
@@ -18,19 +20,40 @@ export default function Stepper({ currentStep, steps }: StepperProps) {
 
         {steps.map((step, index) => (
           <div key={index} className="relative z-10 flex flex-col items-center">
-            <div 
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 ${
-                index <= currentStep 
-                  ? 'bg-emerald-500 text-black' 
-                  : 'bg-[#1a1a1a] text-gray-500 border border-white/10'
-              }`}
+            {/* Step Number Circle */}
+            <button 
+              onClick={() => onStepClick?.(index)}
+              disabled={!onStepClick}
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-300 relative group
+                ${index <= currentStep 
+                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' 
+                  : 'bg-[#1a1a1a] text-gray-500 border border-white/10 hover:border-emerald-500/50'
+                }
+                ${onStepClick ? 'cursor-pointer' : 'cursor-default'}
+              `}
             >
               {index + 1}
-            </div>
+
+              {/* Red Badge for Missing Fields */}
+              {missingFields && missingFields[index] > 0 && (
+                <div className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-[#0a0a0a] flex items-center justify-center animate-pulse">
+                  {missingFields[index]}
+                </div>
+              )}
+              
+              {/* Hover tooltip for steps */}
+              <div className="absolute -bottom-8 bg-black border border-white/10 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none md:hidden text-[10px]">
+                {step}
+              </div>
+            </button>
+
+            {/* Label (Responsive) */}
             <span 
-              className={`absolute top-12 text-[10px] md:text-xs font-medium uppercase tracking-wider whitespace-nowrap transition-all duration-300 ${
-                index <= currentStep ? 'text-emerald-400' : 'text-gray-600'
-              } ${index === currentStep ? 'opacity-100 scale-100' : 'opacity-0 scale-95 md:opacity-100 md:scale-100'}`}
+              className={`absolute top-12 text-[10px] md:text-xs font-medium uppercase tracking-wider whitespace-nowrap transition-all duration-300 cursor-pointer
+                ${index <= currentStep ? 'text-emerald-400' : 'text-gray-600'} 
+                ${index === currentStep ? 'opacity-100 scale-100' : 'opacity-0 scale-95 md:opacity-100 md:scale-100'}
+              `}
+              onClick={() => onStepClick?.(index)}
             >
               {step}
             </span>
