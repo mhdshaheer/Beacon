@@ -79,7 +79,13 @@ export default function UserDashboard() {
             <LayoutDashboard className="w-6 h-6 text-emerald-500" />
             <span className="text-xl font-bold text-gradient">Beacon Hub</span>
          </div>
-         <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6">
+            <Link 
+              href="/dashboard/payments" 
+              className="hidden md:flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-emerald-400 transition-all uppercase tracking-widest"
+            >
+               <CreditCard className="w-4 h-4" /> Payments
+            </Link>
             <div className="hidden md:flex items-center gap-3">
                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
                   <UserIcon className="w-4 h-4 text-emerald-400" />
@@ -95,11 +101,11 @@ export default function UserDashboard() {
          </div>
       </nav>
 
-      <main className="relative z-10 max-w-7xl mx-auto p-6 md:p-10">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <main className="relative z-10 max-w-4xl mx-auto p-6 md:p-10">
+        <div className="space-y-8">
           
           {/* Main Dashboard Section */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                <div>
                   <h2 className="text-3xl font-bold mb-2">Welcome Back, {session?.user?.name?.split(' ')[0]}!</h2>
@@ -176,54 +182,6 @@ export default function UserDashboard() {
                )}
             </div>
           </div>
-
-          {/* Side Section: Payments History */}
-          <div className="space-y-8">
-             <div className="glass-card p-8 border border-white/10 h-full flex flex-col">
-                <div className="flex items-center gap-3 mb-8">
-                   <div className="p-2 bg-emerald-500/10 rounded-lg">
-                      <CreditCard className="w-5 h-5 text-emerald-400" />
-                   </div>
-                   <h3 className="text-xl font-bold">Payments</h3>
-                </div>
-
-                <div className="flex-1 space-y-4 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
-                   {payments.length > 0 ? payments.map((p: any, i: number) => (
-                      <div key={i} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between gap-4">
-                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                               <History className="w-4 h-4 text-emerald-400" />
-                            </div>
-                            <div>
-                               <p className="text-xs font-bold text-gray-300">Registration Fee</p>
-                               <p className="text-[10px] text-gray-600 uppercase tracking-widest">{new Date(p.createdAt).toLocaleDateString()}</p>
-                            </div>
-                         </div>
-                         <div className="text-right">
-                            <p className="text-sm font-bold text-emerald-400">₹{p.amount}</p>
-                            <p className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">Success</p>
-                         </div>
-                      </div>
-                   )) : (
-                      <div className="flex flex-col items-center justify-center py-10 opacity-30 gap-3">
-                         <History className="w-10 h-10" />
-                         <p className="text-xs uppercase tracking-[0.2em]">No records</p>
-                      </div>
-                   )}
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-white/5">
-                   <div className="flex items-center justify-between mb-4">
-                      <span className="text-gray-500 text-sm">Total Contribution</span>
-                      <span className="text-xl font-bold">₹{payments.reduce((acc: number, p: any) => acc + p.amount, 0)}</span>
-                   </div>
-                   <p className="text-[10px] text-gray-700 leading-relaxed italic">
-                      All scholarship fees contribute directly to the athlete empowerment fund.
-                   </p>
-                </div>
-             </div>
-          </div>
-
         </div>
       </main>
     </div>
