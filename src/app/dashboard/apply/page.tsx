@@ -21,12 +21,14 @@ import {
   Trash2,
   X,
   Eye,
-  ExternalLink
+  ExternalLink,
+  ArrowRight
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DatePicker from '@/components/DatePicker';
+import Stepper from '@/components/Stepper';
 
 export default function ApplyPage() {
   const { data: session, status } = useSession();
@@ -74,7 +76,8 @@ export default function ApplyPage() {
     Archery: ['Recurve', 'Compound', 'Other']
   };
 
-  const [expanded, setExpanded] = useState<string | null>('personal');
+  const [currentStep, setCurrentStep] = useState(0);
+  const steps = ['Personal', 'Academic', 'Sports', 'Additional', 'Submit'];
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -110,7 +113,7 @@ export default function ApplyPage() {
   };
 
   const handleSaveSection = async (section: string, manualData?: any, isAuto = false) => {
-    if (!section || section === '') return;
+    if (!section || section === '') return false;
     if (!isAuto) setSavingSection(section);
     try {
       const dataToSave = manualData || (section === 'additionalInfo' ? {
@@ -150,8 +153,10 @@ export default function ApplyPage() {
       }
       
       if (!isAuto) showToast(`${section.replace('Info', '')} updated successfully`, 'success');
+      return true;
     } catch (error: any) {
       if (!isAuto) showToast(error.message, 'error');
+      return false;
     } finally {
       if (!isAuto) setSavingSection(null);
     }
@@ -162,10 +167,10 @@ export default function ApplyPage() {
     if (loading || status !== 'authenticated') return;
 
     const timer = setTimeout(() => {
-      const activeSection = expanded === 'sports' ? 'sportsInfo' : 
-                           expanded === 'personal' ? 'personalInfo' : 
-                           expanded === 'academic' ? 'academicInfo' : 
-                           expanded === 'additional' ? 'additionalInfo' : null;
+      const activeSection = currentStep === 0 ? 'personalInfo' : 
+                           currentStep === 1 ? 'academicInfo' : 
+                           currentStep === 2 ? 'sportsInfo' : 
+                           currentStep === 3 ? 'additionalInfo' : null;
       
       if (activeSection) {
         handleSaveSection(activeSection, null, true);
@@ -173,7 +178,34 @@ export default function ApplyPage() {
     }, 2000); // 2 second debounce
 
     return () => clearTimeout(timer);
-  }, [formData, expanded, loading, status]);
+  }, [formData, currentStep, loading, status]);
+
+  const handleContinue = async (section: string) => {
+    const success = await handleSaveSection(section);
+    if (success) {
+      setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleBack = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStepClick = async (step: number) => {
+    const activeSection = currentStep === 0 ? 'personalInfo' : 
+                         currentStep === 1 ? 'academicInfo' : 
+                         currentStep === 2 ? 'sportsInfo' : 
+                         currentStep === 3 ? 'additionalInfo' : null;
+    
+    if (activeSection && step !== currentStep) {
+        await handleSaveSection(activeSection, null, true);
+    }
+    
+    setCurrentStep(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getMissingFieldsCount = (section: string): number => {
     // Special handling for sportsInfo (array of entries)
@@ -326,624 +358,608 @@ export default function ApplyPage() {
              <h1 className="text-xl font-bold tracking-tight uppercase">Talent Profile 2026</h1>
           </div>
         </div>
+        <Stepper 
+          currentStep={currentStep} 
+          steps={steps} 
+          onStepClick={handleStepClick}
+          missingFields={[
+            getMissingFieldsCount('personalInfo'),
+            getMissingFieldsCount('academicInfo'),
+            getMissingFieldsCount('sportsInfo'),
+            getMissingFieldsCount('additionalInfo'),
+            0
+          ]}
+        />
 
-        <div className="space-y-6">
-          
-          {/* Section: Personal Info */}
-          <SectionCard 
-            id="personal"
-            title="Personal Identification"
-            icon={<User className="w-5 h-5" />}
-            expanded={expanded === 'personal'}
-            onToggle={() => setExpanded(expanded === 'personal' ? null : 'personal')}
-            isSaved={!!formData.personalInfo?._id || formData.personalInfo?.fullName}
-            missingCount={getMissingFieldsCount('personalInfo')}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
-                <input 
-                  className="input-field" 
-                  value={formData.personalInfo.fullName || ''} 
-                  onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, fullName: e.target.value}})}
-                />
-              </div>
-              <div className="space-y-1">
-                <DatePicker 
-                   label="Date of Birth"
-                   value={formData.personalInfo.dob || ''}
-                   onChange={(val) => setFormData({...formData, personalInfo: {...formData.personalInfo, dob: val}})}
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Gender</label>
-                <select 
-                  className="input-field"
-                  value={formData.personalInfo.gender || ''}
-                  onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, gender: e.target.value}})}
-                >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Phone</label>
-                <input 
-                  className="input-field" 
-                  value={formData.personalInfo.phone || ''} 
-                  maxLength={10}
-                  placeholder="10-digit mobile number"
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/\D/g, '');
-                    setFormData({...formData, personalInfo: {...formData.personalInfo, phone: val}});
-                  }}
-                />
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Home Address</label>
-                <textarea 
-                  className="input-field min-h-[80px]" 
-                  value={formData.personalInfo.address || ''} 
-                  onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, address: e.target.value}})}
-                />
-              </div>
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase">Parent/Guardian Name</label>
-                <input 
-                  className="input-field" 
-                  value={formData.personalInfo.parentName || ''} 
-                  onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, parentName: e.target.value}})}
-                />
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Section: Academic Info */}
-          <SectionCard 
-            id="academic"
-            title="Educational Background"
-            icon={<GraduationCap className="w-5 h-5" />}
-            expanded={expanded === 'academic'}
-            onToggle={() => setExpanded(expanded === 'academic' ? null : 'academic')}
-            isSaved={formData.academicInfo?.isStudying !== undefined}
-            missingCount={getMissingFieldsCount('academicInfo')}
-          >
-            <div className="space-y-8">
-              <div className="flex items-center gap-6 p-4 bg-white/5 rounded-2xl border border-white/5">
-                <span className="text-sm font-bold text-gray-300">Are you currently studying?</span>
-                <div className="flex gap-3">
-                  {[
-                    { label: 'Yes', val: true },
-                    { label: 'No', val: false }
-                  ].map((opt) => (
-                    <button
-                      key={opt.label}
-                      onClick={() => setFormData({...formData, academicInfo: {...formData.academicInfo, isStudying: opt.val}})}
-                      className={`px-6 py-2 rounded-xl text-xs font-bold transition-all border ${
-                        formData.academicInfo.isStudying === opt.val
-                          ? 'bg-emerald-500 text-black border-emerald-500'
-                          : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/20'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {formData.academicInfo.isStudying ? (
-                  <motion.div 
-                    key="studying"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
-                  >
-                    <div className="md:col-span-2 space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase">School / College</label>
-                      <input 
-                        className="input-field" 
-                        placeholder="Enter institution name"
-                        value={formData.academicInfo.schoolName || ''} 
-                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, schoolName: e.target.value}})}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase">Current Grade / Class</label>
-                      <input 
-                        className="input-field" 
-                        placeholder="e.g. 10th Grade, B.Sc 2nd Year"
-                        value={formData.academicInfo.grade || ''} 
-                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, grade: e.target.value}})}
-                      />
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    key="not-studying"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
-                  >
-                    <div className="md:col-span-2 space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase">Last School / College Attended</label>
-                      <input 
-                        className="input-field" 
-                        placeholder="Enter last institution name"
-                        value={formData.academicInfo.schoolName || ''} 
-                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, schoolName: e.target.value}})}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-gray-500 uppercase">Last Qualification</label>
-                      <input 
-                        className="input-field" 
-                        placeholder="e.g. 12th Pass, Graduate"
-                        value={formData.academicInfo.lastQualification || ''} 
-                        onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, lastQualification: e.target.value}})}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </SectionCard>
-
-          {/* Section: Sports Info (Multi) */}
-          <SectionCard 
-            id="sports"
-            title={`Sports Technical Details (${formData.sportsInfo.length})`}
-            icon={<Trophy className="w-5 h-5" />}
-            expanded={expanded === 'sports'}
-            onToggle={() => setExpanded(expanded === 'sports' ? null : 'sports')}
-            isSaved={formData.sportsInfo?.length > 0 && !!formData.sportsInfo[0]?.position}
-            missingCount={getMissingFieldsCount('sportsInfo')}
-          >
-            <div className="space-y-8">
-              {formData.sportsInfo.map((entry: any, idx: number) => {
-                const updateEntry = (field: string, value: any) => {
-                  const updated = [...formData.sportsInfo];
-                  updated[idx] = { ...updated[idx], [field]: value };
-                  setFormData({ ...formData, sportsInfo: updated });
-                };
-
-                const handleFileDelete = async (public_id: string) => {
-                  try {
-                    await fetch('/api/upload', {
-                      method: 'DELETE',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ public_id })
-                    });
-                  } catch (err) {
-                    console.error('Cloudinary deletion failed:', err);
-                  }
-                };
-
-                const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-
-                  // Client-side validation
-                  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-                  if (!allowedTypes.includes(file.type)) {
-                    showToast('Only JPG, PNG, WebP and PDF files are allowed', 'error');
-                    e.target.value = '';
-                    return;
-                  }
-                  if (file.size > 10 * 1024 * 1024) {
-                    showToast('File must be less than 10MB', 'error');
-                    e.target.value = '';
-                    return;
-                  }
-
-                  setUploadingIdx(idx);
-                  try {
-                    const fd = new FormData();
-                    fd.append('file', file);
-                    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Upload failed');
-                    
-                    const updated = [...formData.sportsInfo];
-                    updated[idx] = { 
-                      ...updated[idx], 
-                      certificates: [...(updated[idx].certificates || []), { url: data.url, public_id: data.public_id, name: file.name }] 
-                    };
-                    setFormData({ ...formData, sportsInfo: updated });
-                    
-                    // Auto-save after upload
-                    await handleSaveSection('sportsInfo', updated);
-                    
-                    showToast(`"${file.name}" uploaded successfully!`, 'success');
-                  } catch (err: any) {
-                    showToast(err.message || 'Upload failed. Please try again.', 'error');
-                  } finally {
-                    setUploadingIdx(null);
-                    // Reset input so same file can be re-uploaded
-                    e.target.value = '';
-                  }
-                };
-
-                const removeCert = async (certIdx: number) => {
-                  const cert = formData.sportsInfo[idx].certificates[certIdx];
-                  if (cert?.public_id) {
-                    await handleFileDelete(cert.public_id);
-                  }
-                  
-                  const updated = [...formData.sportsInfo];
-                  updated[idx] = { ...updated[idx], certificates: updated[idx].certificates.filter((_: any, i: number) => i !== certIdx) };
-                  setFormData({ ...formData, sportsInfo: updated });
-                  
-                  // Auto-save as draft after removal
-                  await handleSaveSection('sportsInfo', updated);
-                };
-
-                return (
-                  <div key={idx} className="relative p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
-                    {/* Remove button */}
-                    {formData.sportsInfo.length > 1 && (
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          const updated = formData.sportsInfo.filter((_: any, i: number) => i !== idx);
-                          setFormData({ ...formData, sportsInfo: updated });
-                        }}
-                        className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">
-                      Sport #{idx + 1}
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="md:col-span-2 space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Sport</label>
-                        <select className="input-field" value={entry.sport || ''}
-                          onChange={(e) => { updateEntry('sport', e.target.value); updateEntry('position', ''); }}>
-                          {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Role / Position</label>
-                        <select className="input-field" value={entry.position || ''}
-                          onChange={(e) => updateEntry('position', e.target.value)}>
-                          <option value="">Select</option>
-                          {(SPORTS_CONFIG[entry.sport] || SPORTS_CONFIG.Other).map((p: string) => (
-                            <option key={p} value={p}>{p}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
-                          <select className="input-field" value={entry.level || ''}
-                            onChange={(e) => {
-                              const newLevel = e.target.value;
-                              const updated = [...formData.sportsInfo];
-                              updated[idx] = { 
-                                ...updated[idx], 
-                                level: newLevel,
-                                levelOther: newLevel === 'Other' ? (updated[idx].levelOther || '') : ''
-                              };
-                              setFormData({ ...formData, sportsInfo: updated });
-                            }}>
-                            <option value="">Select</option>
-                            <option value="School">School</option>
-                            <option value="District">District</option>
-                            <option value="State">State</option>
-                            <option value="National">National</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-                        
-                        <AnimatePresence>
-                          {entry.level === 'Other' && (
-                            <motion.div 
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden space-y-1"
-                            >
-                              <label className="text-xs font-bold text-gray-500 uppercase">Specify Other Level</label>
-                              <input 
-                                className="input-field" 
-                                placeholder="e.g. International, Regional"
-                                value={entry.levelOther || ''} 
-                                onChange={(e) => updateEntry('levelOther', e.target.value)}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                      <div className="md:col-span-2 space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Team / Club / Academy</label>
-                        <input className="input-field" value={entry.clubName || ''}
-                          onChange={(e) => updateEntry('clubName', e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Years Experience</label>
-                        <input type="number" className="input-field" value={entry.experience || 0}
-                          onChange={(e) => updateEntry('experience', parseInt(e.target.value) || 0)} />
-                      </div>
-                      <div className="md:col-span-2 space-y-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
-                        <textarea className="input-field" placeholder="Tell us about your biggest wins..."
-                          value={entry.achievements || ''}
-                          onChange={(e) => updateEntry('achievements', e.target.value)} />
-                      </div>
-
-                      {/* Certificate Upload */}
-                      <div className="md:col-span-2 space-y-3">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Certificates / Proof</label>
-                        <div className="flex flex-wrap gap-3">
-                          {(entry.certificates || []).map((cert: any, ci: number) => (
-                            <div key={ci} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300">
-                              <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="max-w-[140px] truncate">Certificate {ci + 1}</span>
-                              <div className="flex items-center gap-2 ml-1">
-                                <a 
-                                  href={cert.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-emerald-400 hover:text-emerald-300 transition-colors"
-                                  title="View Document"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </a>
-                                <button type="button" onClick={() => removeCert(ci)} className="text-red-400 hover:text-red-300 transition-colors ml-1" title="Remove">
-                                  <X className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <label className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center transition-all cursor-pointer bg-white/[0.01] ${
-                          uploadingIdx === idx 
-                            ? 'border-emerald-500/40 bg-emerald-500/5' 
-                            : 'border-white/10 hover:border-emerald-500/30 hover:bg-white/[0.03]'
-                        }`}>
-                          <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFileUpload} />
-                          {uploadingIdx === idx
-                            ? <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-                            : <>
-                                <Upload className="w-6 h-6 text-gray-600 mb-2" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Upload Certificate</span>
-                                <span className="text-[9px] text-gray-700 mt-1">PDF, JPG, PNG (Max 10MB)</span>
-                              </>
-                          }
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Add Sport Button */}
-              <button
-                type="button"
-                onClick={() => setFormData({
-                  ...formData,
-                  sportsInfo: [...formData.sportsInfo, { sport: 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] }]
-                })}
-                className="w-full py-4 border-2 border-dashed border-white/10 rounded-3xl text-gray-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2 text-sm font-bold"
+        <div className="mt-12">
+          <AnimatePresence mode="wait">
+            {currentStep === 0 && (
+              <motion.div
+                key="step-0"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
               >
-                <PlusCircle className="w-5 h-5" /> Add Another Sport
-              </button>
-            </div>
-          </SectionCard>
+                <div className="glass-card p-8 border border-white/10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-emerald-500 text-black">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Personal Identification</h2>
+                  </div>
 
-          {/* Section: Additional Info */}
-          <SectionCard 
-            id="additional"
-            title="Additional Profile Information"
-            icon={<PlusCircle className="w-5 h-5" />}
-            expanded={expanded === 'additional'}
-            onToggle={() => setExpanded(expanded === 'additional' ? null : 'additional')}
-            isSaved={!!formData.additionalInfo?.householdIncome}
-            missingCount={getMissingFieldsCount('additionalInfo')}
-          >
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
-                {/* Father's Info */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Father&apos;s Details</h4>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
-                    <input 
-                      className="input-field" 
-                      placeholder="e.g. Business, Engineer"
-                      value={formData.additionalInfo.fatherOccupation || ''} 
-                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherOccupation: e.target.value}})} 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
-                    <input 
-                      type="number" 
-                      className="input-field" 
-                      value={formData.additionalInfo.fatherIncome || 0} 
-                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherIncome: parseInt(e.target.value) || 0}})} 
-                    />
-                  </div>
-                </div>
-
-                {/* Mother's Info */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Mother&apos;s Details</h4>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
-                    <input 
-                      className="input-field" 
-                      placeholder="e.g. Teacher, Homemaker"
-                      value={formData.additionalInfo.motherOccupation || ''} 
-                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherOccupation: e.target.value}})} 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
-                    <input 
-                      type="number" 
-                      className="input-field" 
-                      value={formData.additionalInfo.motherIncome || 0} 
-                      onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherIncome: parseInt(e.target.value) || 0}})} 
-                    />
-                  </div>
-                </div>
-
-                {/* Self Info */}
-                <div className="md:col-span-2 p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-300">Are you currently working?</span>
-                    <div className="flex gap-2">
-                      {[
-                        { label: 'Yes', val: true },
-                        { label: 'No', val: false }
-                      ].map((opt) => (
-                        <button
-                          key={opt.label}
-                          type="button"
-                          onClick={() => setFormData({...formData, additionalInfo: {...formData.additionalInfo, isWorking: opt.val}})}
-                          className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${
-                            formData.additionalInfo.isWorking === opt.val
-                              ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20'
-                              : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/20'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Full Name</label>
+                      <input 
+                        className="input-field" 
+                        value={formData.personalInfo.fullName || ''} 
+                        onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, fullName: e.target.value}})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <DatePicker 
+                         label="Date of Birth"
+                         value={formData.personalInfo.dob || ''}
+                         onChange={(val) => setFormData({...formData, personalInfo: {...formData.personalInfo, dob: val}})}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                      <select 
+                        className="input-field"
+                        value={formData.personalInfo.gender || ''}
+                        onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, gender: e.target.value}})}
+                      >
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Phone</label>
+                      <input 
+                        className="input-field" 
+                        value={formData.personalInfo.phone || ''} 
+                        maxLength={10}
+                        placeholder="10-digit mobile number"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setFormData({...formData, personalInfo: {...formData.personalInfo, phone: val}});
+                        }}
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Home Address</label>
+                      <textarea 
+                        className="input-field min-h-[80px]" 
+                        value={formData.personalInfo.address || ''} 
+                        onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, address: e.target.value}})}
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase">Parent/Guardian Name</label>
+                      <input 
+                        className="input-field" 
+                        value={formData.personalInfo.parentName || ''} 
+                        onChange={(e) => setFormData({...formData, personalInfo: {...formData.personalInfo, parentName: e.target.value}})}
+                      />
                     </div>
                   </div>
 
-                  <AnimatePresence>
-                    {formData.additionalInfo.isWorking && (
-                      <motion.div 
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5"
-                      >
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">Your Occupation</label>
-                          <input 
-                            className="input-field outline-none" 
-                            value={formData.additionalInfo.userOccupation || ''} 
-                            onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userOccupation: e.target.value}})} 
-                          />
+                  <div className="mt-10 flex justify-end">
+                    <button
+                      onClick={() => handleContinue('personalInfo')}
+                      disabled={savingSection === 'personalInfo'}
+                      className="btn-primary flex items-center gap-2 px-8 py-3"
+                    >
+                      {savingSection === 'personalInfo' ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-5 h-5" /></>}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 1 && (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
+              >
+                <div className="glass-card p-8 border border-white/10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-emerald-500 text-black">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Educational Background</h2>
+                  </div>
+
+                  <div className="space-y-8">
+                    <div className="flex items-center gap-6 p-4 bg-white/5 rounded-2xl border border-white/5">
+                      <span className="text-sm font-bold text-gray-300">Are you currently studying?</span>
+                      <div className="flex gap-3">
+                        {[
+                          { label: 'Yes', val: true },
+                          { label: 'No', val: false }
+                        ].map((opt) => (
+                          <button
+                            key={opt.label}
+                            onClick={() => setFormData({...formData, academicInfo: {...formData.academicInfo, isStudying: opt.val}})}
+                            className={`px-6 py-2 rounded-xl text-xs font-bold transition-all border ${
+                              formData.academicInfo.isStudying === opt.val
+                                ? 'bg-emerald-500 text-black border-emerald-500'
+                                : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {formData.academicInfo.isStudying ? (
+                        <motion.div 
+                          key="studying"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
+                        >
+                          <div className="md:col-span-2 space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">School / College</label>
+                            <input 
+                              className="input-field" 
+                              placeholder="Enter institution name"
+                              value={formData.academicInfo.schoolName || ''} 
+                              onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, schoolName: e.target.value}})}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Current Grade / Class</label>
+                            <input 
+                              className="input-field" 
+                              placeholder="e.g. 10th Grade, B.Sc 2nd Year"
+                              value={formData.academicInfo.grade || ''} 
+                              onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, grade: e.target.value}})}
+                            />
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div 
+                          key="not-studying"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
+                        >
+                          <div className="md:col-span-2 space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Last School / College Attended</label>
+                            <input 
+                              className="input-field" 
+                              placeholder="Enter last institution name"
+                              value={formData.academicInfo.schoolName || ''} 
+                              onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, schoolName: e.target.value}})}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Last Qualification</label>
+                            <input 
+                              className="input-field" 
+                              placeholder="e.g. 12th Pass, Graduate"
+                              value={formData.academicInfo.lastQualification || ''} 
+                              onChange={(e) => setFormData({...formData, academicInfo: {...formData.academicInfo, lastQualification: e.target.value}})}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className="mt-10 flex justify-between">
+                    <button onClick={handleBack} className="glass-button px-8 py-3 flex items-center gap-2">
+                       <ArrowLeft className="w-5 h-5" /> Previous
+                    </button>
+                    <button
+                      onClick={() => handleContinue('academicInfo')}
+                      disabled={savingSection === 'academicInfo'}
+                      className="btn-primary flex items-center gap-2 px-8 py-3"
+                    >
+                      {savingSection === 'academicInfo' ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-5 h-5" /></>}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 2 && (
+              <motion.div
+                key="step-2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
+              >
+                <div className="glass-card p-8 border border-white/10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-emerald-500 text-black">
+                      <Trophy className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Sports Technical Details</h2>
+                  </div>
+
+                  <div className="space-y-8">
+                    {formData.sportsInfo.map((entry: any, idx: number) => {
+                      const updateEntry = (field: string, value: any) => {
+                        const updated = [...formData.sportsInfo];
+                        updated[idx] = { ...updated[idx], [field]: value };
+                        setFormData({ ...formData, sportsInfo: updated });
+                      };
+
+                      const handleFileDelete = async (public_id: string) => {
+                        try {
+                          await fetch('/api/upload', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ public_id })
+                          });
+                        } catch (err) {
+                          console.error('Cloudinary deletion failed:', err);
+                        }
+                      };
+
+                      const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+                        if (!allowedTypes.includes(file.type)) {
+                          showToast('Only JPG, PNG, WebP and PDF files are allowed', 'error');
+                          e.target.value = '';
+                          return;
+                        }
+                        if (file.size > 10 * 1024 * 1024) {
+                          showToast('File must be less than 10MB', 'error');
+                          e.target.value = '';
+                          return;
+                        }
+
+                        setUploadingIdx(idx);
+                        try {
+                          const fd = new FormData();
+                          fd.append('file', file);
+                          const res = await fetch('/api/upload', { method: 'POST', body: fd });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || 'Upload failed');
+                          
+                          const updated = [...formData.sportsInfo];
+                          updated[idx] = { 
+                            ...updated[idx], 
+                            certificates: [...(updated[idx].certificates || []), { url: data.url, public_id: data.public_id, name: file.name }] 
+                          };
+                          setFormData({ ...formData, sportsInfo: updated });
+                          await handleSaveSection('sportsInfo', updated);
+                          showToast(`"${file.name}" uploaded successfully!`, 'success');
+                        } catch (err: any) {
+                          showToast(err.message || 'Upload failed. Please try again.', 'error');
+                        } finally {
+                          setUploadingIdx(null);
+                          e.target.value = '';
+                        }
+                      };
+
+                      const removeCert = async (certIdx: number) => {
+                        const cert = formData.sportsInfo[idx].certificates[certIdx];
+                        if (cert?.public_id) {
+                          await handleFileDelete(cert.public_id);
+                        }
+                        
+                        const updated = [...formData.sportsInfo];
+                        updated[idx] = { ...updated[idx], certificates: updated[idx].certificates.filter((_: any, i: number) => i !== certIdx) };
+                        setFormData({ ...formData, sportsInfo: updated });
+                        await handleSaveSection('sportsInfo', updated);
+                      };
+
+                      return (
+                        <div key={idx} className="relative p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
+                          {formData.sportsInfo.length > 1 && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                const updated = formData.sportsInfo.filter((_: any, i: number) => i !== idx);
+                                setFormData({ ...formData, sportsInfo: updated });
+                              }}
+                              className="absolute top-4 right-4 p-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors border border-red-500/20"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/60">
+                            Sport #{idx + 1}
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="md:col-span-2 space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Sport</label>
+                              <select className="input-field" value={entry.sport || ''}
+                                onChange={(e) => { updateEntry('sport', e.target.value); updateEntry('position', ''); }}>
+                                {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Role / Position</label>
+                              <select className="input-field" value={entry.position || ''}
+                                onChange={(e) => updateEntry('position', e.target.value)}>
+                                <option value="">Select</option>
+                                {(SPORTS_CONFIG[entry.sport] || SPORTS_CONFIG.Other).map((p: string) => (
+                                  <option key={p} value={p}>{p}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-4">
+                              <div className="space-y-1">
+                                <label className="text-xs font-bold text-gray-500 uppercase">Level of Play</label>
+                                <select className="input-field" value={entry.level || ''}
+                                  onChange={(e) => {
+                                    const newLevel = e.target.value;
+                                    const updated = [...formData.sportsInfo];
+                                    updated[idx] = { 
+                                      ...updated[idx], 
+                                      level: newLevel,
+                                      levelOther: newLevel === 'Other' ? (updated[idx].levelOther || '') : ''
+                                    };
+                                    setFormData({ ...formData, sportsInfo: updated });
+                                  }}>
+                                  <option value="">Select</option>
+                                  <option value="School">School</option>
+                                  <option value="District">District</option>
+                                  <option value="State">State</option>
+                                  <option value="National">National</option>
+                                  <option value="Other">Other</option>
+                                </select>
+                              </div>
+                              
+                              <AnimatePresence>
+                                {entry.level === 'Other' && (
+                                  <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden space-y-1"
+                                  >
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Specify Other Level</label>
+                                    <input 
+                                      className="input-field" 
+                                      placeholder="e.g. International, Regional"
+                                      value={entry.levelOther || ''} 
+                                      onChange={(e) => updateEntry('levelOther', e.target.value)}
+                                    />
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                            <div className="md:col-span-2 space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Team / Club / Academy</label>
+                              <input className="input-field" value={entry.clubName || ''}
+                                onChange={(e) => updateEntry('clubName', e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Years Experience</label>
+                              <input type="number" className="input-field" value={entry.experience || 0}
+                                onChange={(e) => updateEntry('experience', parseInt(e.target.value) || 0)} />
+                            </div>
+                            <div className="md:col-span-2 space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
+                              <textarea className="input-field" placeholder="Tell us about your biggest wins..."
+                                value={entry.achievements || ''}
+                                onChange={(e) => updateEntry('achievements', e.target.value)} />
+                            </div>
+
+                            <div className="md:col-span-2 space-y-3">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Certificates / Proof</label>
+                              <div className="flex flex-wrap gap-3">
+                                {(entry.certificates || []).map((cert: any, ci: number) => (
+                                  <div key={ci} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-gray-300">
+                                    <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="max-w-[140px] truncate">Certificate {ci + 1}</span>
+                                    <div className="flex items-center gap-2 ml-1">
+                                      <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:text-emerald-300 transition-colors" title="View Document">
+                                        <Eye className="w-3.5 h-3.5" />
+                                      </a>
+                                      <button type="button" onClick={() => removeCert(ci)} className="text-red-400 hover:text-red-300 transition-colors ml-1" title="Remove">
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <label className={`border-2 border-dashed rounded-2xl p-5 flex flex-col items-center justify-center transition-all cursor-pointer bg-white/[0.01] ${
+                                uploadingIdx === idx ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-white/10 hover:border-emerald-500/30 hover:bg-white/[0.03]'
+                              }`}>
+                                <input type="file" className="hidden" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={handleFileUpload} />
+                                {uploadingIdx === idx ? <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" /> : <>
+                                  <Upload className="w-6 h-6 text-gray-600 mb-2" />
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Upload Certificate</span>
+                                  <span className="text-[9px] text-gray-700 mt-1">PDF, JPG, PNG (Max 10MB)</span>
+                                </>}
+                              </label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-gray-500 uppercase">Your Monthly Income</label>
-                          <input 
-                            type="number" 
-                            className="input-field outline-none" 
-                            value={formData.additionalInfo.userIncome || 0} 
-                            onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userIncome: parseInt(e.target.value) || 0}})} 
-                          />
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, sportsInfo: [...formData.sportsInfo, { sport: 'Football', position: '', clubName: '', level: '', experience: 0, achievements: '', certificates: [] }]})}
+                      className="w-full py-4 border-2 border-dashed border-white/10 rounded-3xl text-gray-500 hover:text-emerald-400 hover:border-emerald-500/30 transition-all flex items-center justify-center gap-2 text-sm font-bold"
+                    >
+                      <PlusCircle className="w-5 h-5" /> Add Another Sport
+                    </button>
+                  </div>
+
+                  <div className="mt-10 flex justify-between">
+                    <button onClick={handleBack} className="glass-button px-8 py-3 flex items-center gap-2">
+                       <ArrowLeft className="w-5 h-5" /> Previous
+                    </button>
+                    <button
+                      onClick={() => handleContinue('sportsInfo')}
+                      disabled={savingSection === 'sportsInfo'}
+                      className="btn-primary flex items-center gap-2 px-8 py-3"
+                    >
+                      {savingSection === 'sportsInfo' ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-5 h-5" /></>}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {currentStep === 3 && (
+              <motion.div
+                key="step-3"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
+              >
+                <div className="glass-card p-8 border border-white/10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="p-3 rounded-2xl bg-emerald-500 text-black">
+                      <PlusCircle className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Additional Profile Information</h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Father&apos;s Details</h4>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
+                        <input className="input-field" placeholder="e.g. Business, Engineer" value={formData.additionalInfo.fatherOccupation || ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherOccupation: e.target.value}})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
+                        <input type="number" className="input-field" value={formData.additionalInfo.fatherIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherIncome: parseInt(e.target.value) || 0}})} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500/50 mb-2">Mother&apos;s Details</h4>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Occupation</label>
+                        <input className="input-field" placeholder="e.g. Teacher, Homemaker" value={formData.additionalInfo.motherOccupation || ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherOccupation: e.target.value}})} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
+                        <input type="number" className="input-field" value={formData.additionalInfo.motherIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherIncome: parseInt(e.target.value) || 0}})} />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-6">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-gray-300">Are you currently working?</span>
+                        <div className="flex gap-2">
+                          {[{ label: 'Yes', val: true }, { label: 'No', val: false }].map((opt) => (
+                            <button key={opt.label} type="button" onClick={() => setFormData({...formData, additionalInfo: {...formData.additionalInfo, isWorking: opt.val}})} 
+                              className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${formData.additionalInfo.isWorking === opt.val ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/20'}`}>
+                              {opt.label}
+                            </button>
+                          ))}
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+
+                      <AnimatePresence>
+                        {formData.additionalInfo.isWorking && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Your Occupation</label>
+                              <input className="input-field outline-none" value={formData.additionalInfo.userOccupation || ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userOccupation: e.target.value}})} />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-gray-500 uppercase">Your Monthly Income</label>
+                              <input type="number" className="input-field outline-none" value={formData.additionalInfo.userIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userIncome: parseInt(e.target.value) || 0}})} />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="md:col-span-2 space-y-1 bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10">
+                       <div className="flex items-center justify-between">
+                          <label className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Monthly HH Income</label>
+                          <span className="text-2xl font-black text-white">
+                            ₹{(parseInt(formData.additionalInfo.fatherIncome) || 0) + (parseInt(formData.additionalInfo.motherIncome) || 0) + (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)}
+                          </span>
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-10 flex justify-between">
+                    <button onClick={handleBack} className="glass-button px-8 py-3 flex items-center gap-2">
+                       <ArrowLeft className="w-5 h-5" /> Previous
+                    </button>
+                    <button
+                      onClick={() => handleContinue('additionalInfo')}
+                      disabled={savingSection === 'additionalInfo'}
+                      className="btn-primary flex items-center gap-2 px-8 py-3"
+                    >
+                      {savingSection === 'additionalInfo' ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-5 h-5" /></>}
+                    </button>
+                  </div>
                 </div>
+              </motion.div>
+            )}
 
-                <div className="md:col-span-2 space-y-1 bg-emerald-500/5 p-6 rounded-3xl border border-emerald-500/10">
-                   <div className="flex items-center justify-between">
-                      <label className="text-xs font-black text-emerald-500 uppercase tracking-widest">Total Monthly HH Income</label>
-                      <span className="text-2xl font-black text-white">
-                        ₹{(parseInt(formData.additionalInfo.fatherIncome) || 0) + 
-                          (parseInt(formData.additionalInfo.motherIncome) || 0) + 
-                          (formData.additionalInfo.isWorking ? (parseInt(formData.additionalInfo.userIncome) || 0) : 0)}
-                      </span>
+            {currentStep === 4 && (
+              <motion.div
+                key="step-4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
+              >
+                <div className="glass-card p-1 items-center overflow-hidden border-2 border-emerald-500/20 shadow-2xl shadow-emerald-500/5">
+                   <div className="p-8 flex flex-col items-center text-center gap-10">
+                      <div className="flex flex-col items-center gap-6">
+                         <div className="p-6 bg-emerald-500/10 rounded-3xl border border-emerald-500/20">
+                            <CreditCard className="w-12 h-12 text-emerald-500" />
+                         </div>
+                         <div>
+                            <h3 className="text-3xl font-bold mb-3">Finalize & Submit</h3>
+                            <p className="text-gray-500 text-sm max-w-md">Please ensure all sections above are saved before finalizing. Registration fee is ₹500.</p>
+                         </div>
+                      </div>
+
+                      <div className="w-full max-w-sm space-y-4">
+                        {formData.paymentStatus === 'completed' ? (
+                           <div className="w-full flex items-center justify-center gap-3 py-3 px-8 bg-emerald-500 font-bold text-black rounded-2xl">
+                              <Check className="w-5 h-5" /> ALREADY PAID
+                           </div>
+                        ) : (
+                          <button 
+                            disabled={savingSection === 'payment'}
+                            onClick={handlePayment}
+                            className="btn-primary w-full flex items-center justify-center gap-3 py-3 shadow-xl shadow-emerald-500/20"
+                          >
+                            {savingSection === 'payment' ? <Loader2 className="animate-spin" /> : <><ShieldCheck className="w-6 h-6" /> PAY & SUBMIT</>}
+                          </button>
+                        )}
+                        <button onClick={handleBack} className="w-full py-2 text-gray-500 hover:text-white transition-colors font-bold uppercase tracking-widest text-[10px]">
+                           Review Details
+                        </button>
+                      </div>
                    </div>
-                   <p className="text-[10px] text-gray-500 mt-2 italic">Automatically calculated based on the fields above.</p>
                 </div>
-             </div>
-          </SectionCard>
-
-
-
-          {/* Final Submission Card */}
-          <div className="glass-card p-1 items-center overflow-hidden border-2 border-emerald-500/20 shadow-2xl shadow-emerald-500/5">
-             <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-10">
-                <div className="flex items-center gap-6">
-                   <div className="p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                      <CreditCard className="w-8 h-8 text-emerald-500" />
-                   </div>
-                   <div>
-                      <h3 className="text-2xl font-bold mb-2">Finalize & Submit</h3>
-                      <p className="text-gray-500 text-sm max-w-sm">Please ensure all sections above are saved before finalizing. Registration fee is ₹500.</p>
-                   </div>
-                </div>
-
-                {formData.paymentStatus === 'completed' ? (
-                   <div className="flex items-center gap-3 py-3 px-6 bg-emerald-500 font-bold text-black rounded-xl">
-                      <Check className="w-5 h-5" /> ALREADY PAID
-                   </div>
-                ) : (
-                  <button 
-                    disabled={savingSection === 'payment'}
-                    onClick={handlePayment}
-                    className="btn-primary flex items-center gap-3 px-10 py-5 text-lg shadow-xl shadow-emerald-500/20"
-                  >
-                    {savingSection === 'payment' ? <Loader2 className="animate-spin" /> : <><ShieldCheck className="w-6 h-6" /> PAY & SUBMIT</>}
-                  </button>
-                )}
-             </div>
-          </div>
-
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SectionCard({ id, title, icon, children, expanded, onToggle, isSaved, missingCount }: any) {
-  return (
-    <div className={`glass-card overflow-hidden border-white/5 transition-all duration-300 ${expanded ? 'ring-1 ring-emerald-500/30' : ''}`}>
-      <button 
-        onClick={onToggle}
-        className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group"
-      >
-        <div className="flex items-center gap-4">
-           <div className={`p-2 rounded-lg transition-colors ${expanded ? 'bg-emerald-500 text-black' : 'bg-white/5 text-emerald-400 group-hover:text-emerald-300'}`}>
-              {icon}
-           </div>
-           <div className="text-left">
-              <div className="flex items-center gap-3">
-                <h3 className="font-bold text-lg">{title}</h3>
-                {missingCount > 0 && (
-                  <span className="bg-red-500/10 text-red-500 text-[10px] font-bold px-2 py-0.5 rounded-full border border-red-500/20">
-                    {missingCount} missing
-                  </span>
-                )}
-              </div>
-              {isSaved && !expanded && <span className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1"><Check className="w-3 h-3" /> Saved</span>}
-           </div>
-        </div>
-        <div>
-          {expanded ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
-        </div>
-      </button>
-
-      <AnimatePresence>
-        {expanded && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="p-8 pt-2 border-t border-white/5">
-               {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
