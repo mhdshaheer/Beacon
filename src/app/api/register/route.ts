@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     );
 
     // 2. Create Razorpay Order
-    const amount = 500 * 100; // Registration fee: ₹500
+    const amount = 229 * 100; // Registration fee: ₹229
     const options = {
       amount: amount,
       currency: 'INR',

@@ -931,7 +931,7 @@ export default function ApplyPage() {
                          </div>
                          <div>
                             <h3 className="text-3xl font-bold mb-3">Finalize & Submit</h3>
-                            <p className="text-gray-500 text-sm max-w-md">Please ensure all sections above are saved before finalizing. Registration fee is ₹500.</p>
+                            <p className="text-gray-500 text-sm max-w-md">Please ensure all sections above are saved before finalizing. Registration fee is ₹229.</p>
                          </div>
                       </div>
 
