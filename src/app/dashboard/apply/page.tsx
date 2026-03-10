@@ -102,7 +102,8 @@ export default function ApplyPage() {
               : [defaultSport],
             additionalInfo: { ...prev.additionalInfo, ...(data.additionalInfo || {}) },
             documents: data.documents || { certificates: [], awards: [], trophies: [] },
-            paymentStatus: data.paymentStatus
+            paymentStatus: data.paymentStatus,
+            approvalStatus: data.approvalStatus
         }));
       }
     } catch (err) {
@@ -114,7 +115,8 @@ export default function ApplyPage() {
 
   const handleSaveSection = async (section: string, manualData?: any, isAuto = false) => {
     if (!section || section === '') return false;
-    if (!isAuto) setSavingSection(section);
+      if (isReadOnly) return false;
+      if (!isAuto) setSavingSection(section);
     try {
       const dataToSave = manualData || (section === 'additionalInfo' ? {
         ...formData[section],
@@ -339,6 +341,8 @@ export default function ApplyPage() {
   };
 
 
+  const isReadOnly = ['approved', 'rejected'].includes(formData.approvalStatus);
+  const isPending = !formData.approvalStatus || formData.approvalStatus === 'pending';
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -358,6 +362,17 @@ export default function ApplyPage() {
              <h1 className="text-xl font-bold tracking-tight uppercase">Talent Profile 2026</h1>
           </div>
         </div>
+
+        {isReadOnly && (
+          <div className="mb-8 p-6 bg-amber-500/10 border border-amber-500/20 rounded-3xl flex items-center gap-4 text-amber-500 shadow-xl shadow-amber-500/5">
+            <AlertCircle className="w-6 h-6 shrink-0" />
+            <div>
+              <p className="font-bold">Application Locked</p>
+              <p className="text-sm opacity-80">This application has been {formData.approvalStatus} and can no longer be edited. Please contact support for any changes.</p>
+            </div>
+          </div>
+        )}
+
         <Stepper 
           currentStep={currentStep} 
           steps={steps} 
@@ -371,7 +386,7 @@ export default function ApplyPage() {
           ]}
         />
 
-        <div className="mt-12">
+        <div className={`mt-12 ${isReadOnly ? 'pointer-events-none opacity-80 select-none' : ''}`}>
           <AnimatePresence mode="wait">
             {currentStep === 0 && (
               <motion.div
