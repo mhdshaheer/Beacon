@@ -111,11 +111,21 @@ export default function UserDashboard() {
                   <h2 className="text-3xl font-bold mb-2">Welcome Back, {session?.user?.name?.split(' ')[0]}!</h2>
                   <p className="text-gray-500">Track and manage your scholarship applications.</p>
                </div>
-               {!application && (
-                  <Link href="/dashboard/apply" className="btn-primary flex items-center gap-2 shadow-xl shadow-emerald-500/20">
+                {application ? (
+                   ['pending', 'viewed'].includes(application.approvalStatus) ? (
+                      <Link href="/dashboard/apply" className="btn-primary flex items-center gap-2 shadow-xl shadow-emerald-500/20 text-black">
+                        <FileText className="w-5 h-5" /> Edit Application
+                      </Link>
+                   ) : (
+                      <Link href="/dashboard/apply" className="glass-button flex items-center gap-2 px-6 py-2 border border-white/10 text-white rounded-xl font-bold">
+                        <FileText className="w-5 h-5" /> View Application
+                      </Link>
+                   )
+                ) : (
+                  <Link href="/dashboard/apply" className="btn-primary flex items-center gap-2 shadow-xl shadow-emerald-500/20 text-black">
                     <Plus className="w-5 h-5" /> Start Application
                   </Link>
-               )}
+                )}
             </div>
 
             {/* Application Status Card */}
@@ -170,7 +180,7 @@ export default function UserDashboard() {
                           <p className="text-xs text-gray-600">Submitted on {new Date(application.createdAt).toLocaleDateString()}</p>
                        </div>
                        <Link href="/dashboard/apply" className="flex items-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 font-semibold transition-colors group">
-                          Edit Detail <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          {['pending', 'viewed'].includes(application.approvalStatus) ? 'Edit Detail' : 'View Detail'} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                        </Link>
                     </div>
                  </div>
