@@ -20,16 +20,34 @@ export async function GET() {
       approved: await Application.countDocuments({ approvalStatus: 'approved' }),
     };
 
-    // Monthly data (example last 6 months)
-    // This could be real data based on createdAt
-    const chartData = [
-      { month: 'Sep', users: 12, applications: 8 },
-      { month: 'Oct', users: 19, applications: 15 },
-      { month: 'Nov', users: 25, applications: 22 },
-      { month: 'Dec', users: 38, applications: 30 },
-      { month: 'Jan', users: 45, applications: 42 },
-      { month: 'Feb', users: 54, applications: 48 },
-    ];
+    // Generate last 6 months list
+    const months = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.push({
+        name: d.toLocaleString('default', { month: 'short' }),
+        year: d.getFullYear(),
+        monthNum: d.getMonth()
+      });
+    }
+
+    // Real aggregation for chart data
+    const chartData = await Promise.all(months.map(async (m) => {
+      const startDate = new Date(m.year, m.monthNum, 1);
+      const endDate = new Date(m.year, m.monthNum + 1, 0, 23, 59, 59);
+
+      const [userCount, appCount] = await Promise.all([
+        User.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+        Application.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } })
+      ]);
+
+      return {
+        month: m.name,
+        users: userCount,
+        applications: appCount
+      };
+    }));
 
     return NextResponse.json({ 
       users: userStats, 
