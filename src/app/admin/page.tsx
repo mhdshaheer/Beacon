@@ -98,23 +98,26 @@ export default function AdminDashboard() {
             <span className="text-xs text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full">+12% this month</span>
           </div>
           <div className="h-64 flex items-end justify-between gap-4 px-4 pt-10">
-            {data.chartData.map((d: any, i: number) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-3">
-                <div className="relative w-full flex justify-center items-end gap-1 h-32">
-                   <motion.div 
-                     initial={{ height: 0 }} 
-                     animate={{ height: `${(d.users / 60) * 100}%` }}
-                     className="w-1.5 md:w-3 bg-blue-500/50 rounded-t-sm"
-                   />
-                   <motion.div 
-                     initial={{ height: 0 }} 
-                     animate={{ height: `${(d.applications / 60) * 100}%` }}
-                     className="w-1.5 md:w-3 bg-emerald-500/70 rounded-t-sm"
-                   />
+            {(() => {
+              const maxVal = Math.max(...data.chartData.map((d: any) => Math.max(d.users, d.applications)), 5);
+              return data.chartData.map((d: any, i: number) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-3">
+                  <div className="relative w-full flex justify-center items-end gap-1 h-32">
+                     <motion.div 
+                       initial={{ height: 0 }} 
+                       animate={{ height: `${(d.users / maxVal) * 100}%` }}
+                       className="w-1.5 md:w-3 bg-blue-500/50 rounded-t-sm"
+                     />
+                     <motion.div 
+                       initial={{ height: 0 }} 
+                       animate={{ height: `${(d.applications / maxVal) * 100}%` }}
+                       className="w-1.5 md:w-3 bg-emerald-500/70 rounded-t-sm"
+                     />
+                  </div>
+                  <span className="text-[10px] md:text-xs text-gray-500 rotate-45 md:rotate-0 mt-2">{d.month}</span>
                 </div>
-                <span className="text-[10px] md:text-xs text-gray-500 rotate-45 md:rotate-0 mt-2">{d.month}</span>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
           <div className="flex justify-center gap-6 mt-8">
              <div className="flex items-center gap-2 text-xs text-gray-400">
