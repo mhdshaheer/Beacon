@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   User as UserIcon,
   CreditCard,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
