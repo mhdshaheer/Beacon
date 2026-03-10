@@ -31,8 +31,10 @@ Vercel works best with a Git repository:
     *   `RAZORPAY_KEY_ID`
     *   `RAZORPAY_KEY_SECRET`
     *   `NEXT_PUBLIC_RAZORPAY_KEY_ID`
-    *   `NEXTAUTH_SECRET` (You can generate one using `openssl rand -base64 32`)
-    *   `NEXTAUTH_URL` (Set this to your production URL, e.g., `https://your-app.vercel.app`)
+    *   `ADMIN_EMAIL` (e.g., `admin@beacon.com`)
+    *   `ADMIN_PASSWORD` (e.g., `Admin@123`)
+    *   `NEXTAUTH_SECRET` (Use a strong random string)
+    *   `NEXTAUTH_URL` (CRITICAL: Set this to your live URL, e.g., `https://beacon.vercel.app`)
 5.  Click **Deploy**.
 
 ## 4. Update Razorpay Dashboard
