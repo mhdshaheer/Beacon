@@ -22,7 +22,7 @@ export async function POST(req: Request) {
             applicationId: application._id,
             razorpayOrderId: razorpay_order_id,
             razorpayPaymentId: razorpay_payment_id || null,
-            amount: 500,
+            amount: 229,
             status: 'failed',
           },
           { upsert: true, new: true }
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
             razorpayOrderId: razorpay_order_id,
             razorpayPaymentId: razorpay_payment_id,
             razorpaySignature: razorpay_signature,
-            amount: 500, // ₹500 (stored as rupees, not paise)
+            amount: 229, // ₹229 (stored as rupees, not paise)
             status: 'paid',
           },
           { upsert: true, new: true }

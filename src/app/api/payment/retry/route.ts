@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     }
 
     // Create a new Razorpay order
-    const amount = 500 * 100; // ₹500 in paise
+    const amount = 229 * 100; // ₹229 in paise
     const order = await razorpay.orders.create({
       amount,
       currency: 'INR',
