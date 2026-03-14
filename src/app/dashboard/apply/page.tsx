@@ -769,8 +769,8 @@ export default function ApplyPage() {
                             </div>
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-gray-500 uppercase">Years Experience</label>
-                              <input type="number" className="input-field" value={entry.experience || 0}
-                                onChange={(e) => updateEntry('experience', parseInt(e.target.value) || 0)} />
+                              <input type="number" className="input-field" value={entry.experience ?? ''}
+                                onChange={(e) => updateEntry('experience', e.target.value === '' ? '' : (parseInt(e.target.value) || 0))} />
                             </div>
                             <div className="md:col-span-2 space-y-1">
                               <label className="text-xs font-bold text-gray-500 uppercase">Notable Achievements</label>
@@ -863,7 +863,7 @@ export default function ApplyPage() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
-                        <input type="number" className="input-field" value={formData.additionalInfo.fatherIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherIncome: parseInt(e.target.value) || 0}})} />
+                        <input type="number" className="input-field" value={formData.additionalInfo.fatherIncome ?? ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, fatherIncome: e.target.value === '' ? '' : (parseInt(e.target.value) || 0)}})} />
                       </div>
                     </div>
 
@@ -875,7 +875,7 @@ export default function ApplyPage() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-gray-500 uppercase">Monthly Income</label>
-                        <input type="number" className="input-field" value={formData.additionalInfo.motherIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherIncome: parseInt(e.target.value) || 0}})} />
+                        <input type="number" className="input-field" value={formData.additionalInfo.motherIncome ?? ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, motherIncome: e.target.value === '' ? '' : (parseInt(e.target.value) || 0)}})} />
                       </div>
                     </div>
 
@@ -901,7 +901,7 @@ export default function ApplyPage() {
                             </div>
                             <div className="space-y-1">
                               <label className="text-xs font-bold text-gray-500 uppercase">Your Monthly Income</label>
-                              <input type="number" className="input-field outline-none" value={formData.additionalInfo.userIncome || 0} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userIncome: parseInt(e.target.value) || 0}})} />
+                              <input type="number" className="input-field outline-none" value={formData.additionalInfo.userIncome ?? ''} onChange={(e) => setFormData({...formData, additionalInfo: {...formData.additionalInfo, userIncome: e.target.value === '' ? '' : (parseInt(e.target.value) || 0)}})} />
                             </div>
                           </motion.div>
                         )}
