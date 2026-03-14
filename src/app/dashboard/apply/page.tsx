@@ -702,7 +702,11 @@ export default function ApplyPage() {
                             <div className="md:col-span-2 space-y-1">
                               <label className="text-xs font-bold text-gray-500 uppercase">Sport</label>
                               <select className="input-field" value={entry.sport || ''}
-                                onChange={(e) => { updateEntry('sport', e.target.value); updateEntry('position', ''); }}>
+                                onChange={(e) => {
+                                  const updated = [...formData.sportsInfo];
+                                  updated[idx] = { ...updated[idx], sport: e.target.value, position: '' };
+                                  setFormData({ ...formData, sportsInfo: updated });
+                                }}>
                                 {Object.keys(SPORTS_CONFIG).map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                             </div>
@@ -711,7 +715,7 @@ export default function ApplyPage() {
                               <select className="input-field" value={entry.position || ''}
                                 onChange={(e) => updateEntry('position', e.target.value)}>
                                 <option value="">Select</option>
-                                {(SPORTS_CONFIG[entry.sport] || SPORTS_CONFIG.Other).map((p: string) => (
+                                {(SPORTS_CONFIG[entry.sport] || ['Player', 'Other']).map((p: string) => (
                                   <option key={p} value={p}>{p}</option>
                                 ))}
                               </select>
