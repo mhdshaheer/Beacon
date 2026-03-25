@@ -8,7 +8,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'Beacon Scholarship <your-email@gmail.com>';
+const FROM_EMAIL = process.env.EMAIL_FROM || 'Beacon Scholarship <beacon.scholarship.info@gmail.com>';
 
 const handleEmailError = (error: unknown, email: string, otp: string, context: string) => {
   console.error(`Nodemailer [${context}] error:`, error);
