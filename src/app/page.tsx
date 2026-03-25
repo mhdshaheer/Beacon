@@ -175,29 +175,15 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* CTA Footer */}
-      <footer className="relative z-10 pb-10 pt-20 px-4 border-t border-white/5">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
-          <div>
-            <div className="text-2xl font-bold text-gradient mb-2">Beacon Scholarship</div>
-            <p className="text-gray-500 max-w-sm text-sm">
-              Empowering talented athletes through education and elite sports training since 2018.
-            </p>
+      {/* Footer */}
+      <footer className="relative z-10 pb-12 pt-20 px-4 border-t border-white/5">
+        <div className="max-w-7xl mx-auto flex flex-col items-center">
+          <div className="text-gray-400 hover:text-emerald-400 transition-colors text-lg mb-8">
+            <a href="mailto:beacon.scholarship.info@gmail.com">beacon.scholarship.info@gmail.com</a>
           </div>
-          <div className="flex gap-10">
-            <div className="space-y-2">
-              <div className="text-white font-semibold">Contact</div>
-              <div className="text-gray-500 text-sm">support@beaconscholarship.com</div>
-              <div className="text-gray-500 text-sm">+91 98765 43210</div>
-            </div>
-            <div className="space-y-2 text-right md:text-left">
-              <div className="text-white font-semibold">Location</div>
-              <div className="text-gray-500 text-sm text-balance">Elite Sports Complex, Bangalore, India</div>
-            </div>
+          <div className="text-gray-600 text-[10px] uppercase tracking-[0.2em]">
+            &copy; 2026 Beacon Scholarship &bull; All Rights Reserved
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/5 text-center text-gray-600 text-xs">
-          © 2026 Beacon Scholarship Program. All rights reserved.
         </div>
       </footer>
     </main>
