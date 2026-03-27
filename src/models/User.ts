@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IUser extends Document {
   name: string;
   email: string;
-  sport: string;
+  sport?: string;
   password?: string;
   role: 'user' | 'admin';
   isVerified: boolean;

@@ -20,7 +20,7 @@ export async function PATCH(
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { role },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedUser) {

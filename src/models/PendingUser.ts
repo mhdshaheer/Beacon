@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IPendingUser extends Document {
   name: string;
   email: string;
-  sport: string;
+  sport?: string;
   passwordHashed: string;
   otpCode: string;
   otpExpires: Date;

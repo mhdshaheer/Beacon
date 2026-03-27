@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const application = await Application.findOneAndUpdate(
       { userId },
       { $set: update },
-      { upsert: true, new: true, runValidators: false } // runValidators: false allows partial saving
+      { upsert: true, returnDocument: 'after', runValidators: false } // runValidators: false allows partial saving
     );
 
     return NextResponse.json({ message: 'Section saved successfully', application });

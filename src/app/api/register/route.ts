@@ -65,7 +65,7 @@ export async function POST(req: Request) {
           paymentStatus: 'pending'
         }
       },
-      { upsert: true, new: true, runValidators: false }
+      { upsert: true, returnDocument: 'after', runValidators: false }
     );
 
     // 2. Create Razorpay Order

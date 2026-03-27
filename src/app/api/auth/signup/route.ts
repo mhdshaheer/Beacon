@@ -7,7 +7,7 @@ import { sendOTPEmail } from '@/lib/email';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, sport, resendOnly } = body;
+    const { name, email, password, resendOnly } = body;
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Regular Signup Logic
-    if (!name || !password || !sport) {
+    if (!name || !password) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
     }
 
@@ -65,7 +65,6 @@ export async function POST(req: Request) {
         $set: { 
           name, 
           email: normalizedEmail,
-          sport,
           passwordHashed: hashedPassword, 
           otpCode, 
           otpExpires,

@@ -21,7 +21,7 @@ export async function PATCH(
     const application = await Application.findByIdAndUpdate(
       id,
       { approvalStatus },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!application) {

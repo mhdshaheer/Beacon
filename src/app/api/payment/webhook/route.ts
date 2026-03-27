@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       const application = await Application.findOneAndUpdate(
         { razorpayOrderId: orderId },
         { paymentStatus: 'pending' },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (application) {
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
             amount: Math.round(payload.amount / 100), // Convert paise to rupees
             status: 'failed',
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
 
         console.log(`[WEBHOOK] Payment failed recorded for Order: ${orderId}`);
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
       const application = await Application.findOneAndUpdate(
         { razorpayOrderId: orderId },
         { paymentStatus: 'completed', razorpayPaymentId: paymentId },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (application) {
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
             amount: Math.round(payment.amount / 100),
             status: 'paid',
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
 
         console.log(`[WEBHOOK] Payment captured for Order: ${orderId}`);

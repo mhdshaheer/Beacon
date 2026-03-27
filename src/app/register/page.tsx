@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signupSchema, SignupData } from '@/lib/validations';
 import { useToast } from '@/providers/ToastProvider';
-import { ArrowRight, Check, Loader2, Mail, Lock, User as UserIcon, Trophy, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Check, Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -174,35 +174,6 @@ export default function RegisterPage() {
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-400 ml-1">Preferred Sport</label>
-                  <div className="relative">
-                    <Trophy className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                    <select
-                      {...register('sport')}
-                      className="input-field pl-12 appearance-none"
-                    >
-                      <option value="">Select Sport</option>
-                      <option value="Cricket">Cricket</option>
-                      <option value="Football">Football</option>
-                      <option value="Hockey">Hockey</option>
-                      <option value="Badminton">Badminton</option>
-                      <option value="Kabaddi">Kabaddi</option>
-                      <option value="Tennis">Tennis</option>
-                      <option value="Table tennis">Table tennis</option>
-                      <option value="Boxing">Boxing</option>
-                      <option value="Wrestling">Wrestling</option>
-                      <option value="Chess">Chess</option>
-                      <option value="Athletes">Athletes</option>
-                      <option value="Swimming">Swimming</option>
-                      <option value="Weight lifting">Weight lifting</option>
-                      <option value="Volleyball">Volleyball</option>
-                      <option value="Hand ball">Hand ball</option>
-                      <option value="Archery">Archery</option>
-                    </select>
-                  </div>
-                  {errors.sport && <p className="text-red-500 text-xs mt-1">{errors.sport.message}</p>}
-                </div>
 
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-gray-400 ml-1">Password</label>
