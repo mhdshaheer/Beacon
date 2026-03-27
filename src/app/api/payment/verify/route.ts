@@ -25,7 +25,7 @@ export async function POST(req: Request) {
             amount: 229,
             status: 'failed',
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
         console.log(`[VERIFY] Failed payment recorded for Order: ${razorpay_order_id}`);
       }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
           paymentStatus: 'completed',
           razorpayPaymentId: razorpay_payment_id 
         },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (application) {
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
             amount: 229, // ₹229 (stored as rupees, not paise)
             status: 'paid',
           },
-          { upsert: true, new: true }
+          { upsert: true, returnDocument: 'after' }
         );
         console.log(`[VERIFY] Payment success recorded for Order: ${razorpay_order_id}`);
       }
